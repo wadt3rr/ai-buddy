@@ -1,0 +1,14 @@
+#Env
+.env
+.env.*
+!.env.example
+
+#Go
+/bin/
+/dist/
+/vendor/
+coverage.*
+
+#IDE
+.idea/
+.vscode/
