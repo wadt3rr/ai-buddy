@@ -3,3 +3,8 @@ http:
   read_timeout: 5s
   write_timeout: 10s
   idle_timeout: 60s
+database:
+  max_conns: 10
+auth:
+  jwt_secret: "your_random_secret_at_least_32_bytes_long"
+  jwt_ttl: 24h

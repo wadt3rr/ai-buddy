@@ -4,20 +4,32 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	HTTP HTTPConfig `yaml:"http"`
+	HTTP     HTTPConfig     `yaml:"http"`
+	Database DatabaseConfig `yaml:"database"`
+	Auth     AuthConfig     `yaml:"auth"`
+}
+
+type DatabaseConfig struct {
+	MaxConns int32 `yaml:"max_conns"`
 }
 
 type HTTPConfig struct {
-	Addr         string        `yaml:"addr"`
-	ReadTimeout  time.Duration `yaml:"-"`
-	WriteTimeout time.Duration `yaml:"-"`
-	IdleTimeout  time.Duration `yaml:"-"`
+	Addr         string
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	IdleTimeout  time.Duration
+}
+
+type AuthConfig struct {
+	JWTSecret string
+	JWTTTL    time.Duration
 }
 
 type rawConfig struct {
@@ -27,6 +39,15 @@ type rawConfig struct {
 		WriteTimeout string `yaml:"write_timeout"`
 		IdleTimeout  string `yaml:"idle_timeout"`
 	} `yaml:"http"`
+
+	Database struct {
+		MaxConns int32 `yaml:"max_conns"`
+	} `yaml:"database"`
+
+	Auth struct {
+		JWTSecret string `yaml:"jwt_secret"`
+		JWTTTL    string `yaml:"jwt_ttl"`
+	} `yaml:"auth"`
 }
 
 func Load(path string) (Config, error) {
@@ -67,12 +88,37 @@ func Load(path string) (Config, error) {
 		return Config{}, fmt.Errorf("HTTP timeouts must be positive")
 	}
 
+	jwtTTL, err := time.ParseDuration(raw.Auth.JWTTTL)
+	if err != nil {
+		return Config{}, fmt.Errorf("parse auth.jwt_ttl: %w", err)
+	}
+
+	if jwtTTL <= 0 {
+		return Config{}, fmt.Errorf("auth.jwt_ttl must be positive")
+	}
+
+	jwtSecret := strings.TrimSpace(raw.Auth.JWTSecret)
+	if len(jwtSecret) < 32 {
+		return Config{}, fmt.Errorf("auth.jwt_secret must contain at least 32 bytes")
+	}
+
+	if raw.Database.MaxConns <= 0 {
+		return Config{}, fmt.Errorf("database.max_conns must be positive")
+	}
+
 	return Config{
 		HTTP: HTTPConfig{
 			Addr:         raw.HTTP.Addr,
 			ReadTimeout:  readTimeout,
 			WriteTimeout: writeTimeout,
 			IdleTimeout:  idleTimeout,
+		},
+		Database: DatabaseConfig{
+			MaxConns: raw.Database.MaxConns,
+		},
+		Auth: AuthConfig{
+			JWTSecret: jwtSecret,
+			JWTTTL:    jwtTTL,
 		},
 	}, nil
 }

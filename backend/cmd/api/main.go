@@ -11,8 +11,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/wadt3rr/ai-buddy/internal/assistant"
+	"github.com/wadt3rr/ai-buddy/internal/auth"
 	"github.com/wadt3rr/ai-buddy/internal/config"
+	"github.com/wadt3rr/ai-buddy/internal/infrastructure/postgres"
+	"github.com/wadt3rr/ai-buddy/internal/message"
+	messagepostgres "github.com/wadt3rr/ai-buddy/internal/message/repository/postgres"
 	httptransport "github.com/wadt3rr/ai-buddy/internal/transport/http"
+	"github.com/wadt3rr/ai-buddy/internal/transport/http/handlers"
+	"github.com/wadt3rr/ai-buddy/internal/user"
+	userpostgres "github.com/wadt3rr/ai-buddy/internal/user/repository/postgres"
 )
 
 func main() {
@@ -28,9 +36,61 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+
+	dbCtx, dbCancel := context.WithTimeout(
+		context.Background(),
+		5*time.Second,
+	)
+	defer dbCancel()
+
+	pool, err := postgres.NewPool(
+		dbCtx,
+		databaseURL,
+		cfg.Database.MaxConns,
+	)
+	if err != nil {
+		log.Fatalf("connect to database: %v", err)
+	}
+	defer pool.Close()
+
+	userRepository := userpostgres.NewRepository(pool)
+	userService := user.NewService(userRepository)
+
+	messageRepository := messagepostgres.NewRepository(pool)
+	messageService := message.NewService(
+		messageRepository,
+		userService,
+		assistant.NewMockClient(),
+	)
+	messageHandler := handlers.NewMessageHandler(messageService)
+
+	jwtService, err := auth.NewJWTService(
+		cfg.Auth.JWTSecret,
+		cfg.Auth.JWTTTL,
+	)
+	if err != nil {
+		log.Fatalf("initialize jwt service: %v", err)
+	}
+
+	authMiddleware := auth.NewMiddleware(jwtService)
+
+	authHandler := handlers.NewAuthHandler(userService, jwtService)
+	userHandler := handlers.NewUserHandler(userService)
+
+	router := httptransport.NewRouter(
+		authHandler,
+		userHandler,
+		messageHandler,
+		authMiddleware,
+	)
+
 	server := &http.Server{
 		Addr:         cfg.HTTP.Addr,
-		Handler:      httptransport.NewRouter(),
+		Handler:      router,
 		ReadTimeout:  cfg.HTTP.ReadTimeout,
 		WriteTimeout: cfg.HTTP.WriteTimeout,
 		IdleTimeout:  cfg.HTTP.IdleTimeout,
