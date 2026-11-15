@@ -1,6 +1,6 @@
 import axios from "axios"
 
-export const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(
+export const API_URL = (import.meta.env.VITE_API_URL || "/api/v1").replace(
   /\/$/,
   ""
 )
@@ -9,9 +9,18 @@ export const apiUrl = (path: string) => `${API_URL}${path}`
 
 export const client = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
+  withCredentials: false,
   timeout: 15_000,
   headers: { Accept: "application/json" },
+})
+
+export const TOKEN_KEY = "ai_buddy_access_token"
+export const getToken = () => localStorage.getItem(TOKEN_KEY)
+export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
+client.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
 })
 
 export class ApiError extends Error {
@@ -43,8 +52,10 @@ export function toApiError(error: unknown): ApiError {
       return new ApiError("Сервер временно недоступен. Попробуй позже.", status)
     const data = error.response.data
     return new ApiError(
-      isRecord(data) && typeof data.message === "string"
-        ? data.message
+      isRecord(data) &&
+        isRecord(data.error) &&
+        typeof data.error.message === "string"
+        ? data.error.message
         : "Не удалось выполнить запрос. Попробуй ещё раз.",
       status
     )
@@ -75,8 +86,9 @@ client.interceptors.response.use(
       axios.isAxiosError(error) &&
       error.response?.status === 401 &&
       error.config?.url !== "/auth/login" &&
-      error.config?.url !== "/auth/me"
+      error.config?.url !== "/users/me"
     ) {
+      clearToken()
       notifyUnauthorized()
     }
     return Promise.reject(error)

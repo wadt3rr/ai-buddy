@@ -161,3 +161,205 @@ describe("ChatConversation", () => {
     expect(screen.getByRole("textbox")).toBeEnabled()
   })
 })
+
+describe("history pagination viewport", () => {
+  it("loads at the top and preserves scroll offset after prepending older messages", () => {
+    const onLoadOlder = vi.fn().mockResolvedValue(undefined)
+    const recent = [assistant("Новый ответ")]
+    const props = {
+      onSend: vi.fn(),
+      onStop: vi.fn(),
+      onLoadOlder,
+      hasMore: true,
+    }
+    const { container, rerender } = render(
+      <ChatConversation {...props} messages={recent} />
+    )
+    const viewport = container.querySelector<HTMLElement>(
+      '[data-slot="message-scroller-viewport"]'
+    )!
+    let height = 1000
+    Object.defineProperty(viewport, "scrollHeight", {
+      configurable: true,
+      get: () => height,
+    })
+    const firstMessage =
+      container.querySelector<HTMLElement>("[data-message-id]")!
+    let messageTop = 0
+    vi.spyOn(firstMessage, "getBoundingClientRect").mockImplementation(
+      () => ({ top: messageTop }) as DOMRect
+    )
+    viewport.scrollTop = 20
+    fireEvent.scroll(viewport)
+    expect(onLoadOlder).toHaveBeenCalledOnce()
+    rerender(<ChatConversation {...props} messages={recent} isHistoryLoading />)
+    fireEvent.scroll(viewport)
+    expect(onLoadOlder).toHaveBeenCalledOnce()
+    height = 1800
+    messageTop = 600
+    rerender(
+      <ChatConversation
+        {...props}
+        messages={[
+          { ...assistant("Старый ответ"), id: "old" },
+          ...recent,
+          { ...assistant("Новый фрагмент", "streaming"), id: "stream" },
+        ]}
+      />
+    )
+    expect(viewport.scrollTop).toBe(620)
+  })
+  it("exposes retry and stops automatic loading on errors or exhausted history", () => {
+    const onLoadOlder = vi.fn().mockResolvedValue(undefined)
+    const props = {
+      messages: [assistant("Ответ")],
+      onSend: vi.fn(),
+      onStop: vi.fn(),
+      onLoadOlder,
+    }
+    const { container, rerender } = render(
+      <ChatConversation {...props} hasMore historyError="Ошибка истории" />
+    )
+    const viewport = container.querySelector<HTMLElement>(
+      '[data-slot="message-scroller-viewport"]'
+    )!
+    fireEvent.scroll(viewport)
+    expect(onLoadOlder).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: "Повторить загрузку" }))
+    expect(onLoadOlder).toHaveBeenCalledOnce()
+    rerender(<ChatConversation {...props} />)
+    fireEvent.scroll(viewport)
+    expect(onLoadOlder).toHaveBeenCalledOnce()
+  })
+})
+
+describe("chat scroll following", () => {
+  it("positions an asynchronously loaded first page before paint and resets on remount", () => {
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(1400)
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(400)
+    const props = { onSend: vi.fn(), onStop: vi.fn() }
+    const { container, rerender } = render(
+      <ChatConversation {...props} messages={[]} isHistoryLoading />
+    )
+    const viewport = () =>
+      container.querySelector<HTMLElement>(
+        '[data-slot="message-scroller-viewport"]'
+      )!
+    rerender(
+      <ChatConversation {...props} messages={[assistant("Последний ответ")]} />
+    )
+    expect(viewport().scrollTop).toBe(1000)
+    viewport().scrollTop = 100
+    fireEvent.scroll(viewport())
+    rerender(
+      <ChatConversation
+        key="another-session"
+        {...props}
+        messages={[assistant("Другой чат")]}
+      />
+    )
+    expect(viewport().scrollTop).toBe(1000)
+  })
+  it("follows streaming text and delayed resizing only while near the bottom", () => {
+    let height = 1000
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockImplementation(
+      () => height
+    )
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(400)
+    const observers: {
+      callback: ResizeObserverCallback
+      targets: Element[]
+    }[] = []
+    const disconnect = vi.fn()
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        entry: (typeof observers)[number]
+        constructor(callback: ResizeObserverCallback) {
+          this.entry = { callback, targets: [] }
+          observers.push(this.entry)
+        }
+        observe(target: Element) {
+          this.entry.targets.push(target)
+        }
+        unobserve() {}
+        disconnect = disconnect
+      }
+    )
+    const props = { onSend: vi.fn(), onStop: vi.fn(), isLoading: true }
+    const { container, rerender, unmount } = render(
+      <ChatConversation
+        {...props}
+        messages={[assistant("Один", "streaming")]}
+      />
+    )
+    const viewport = container.querySelector<HTMLElement>(
+      '[data-slot="message-scroller-viewport"]'
+    )!
+    expect(viewport.scrollTop).toBe(600)
+    height = 1200
+    rerender(
+      <ChatConversation
+        {...props}
+        messages={[assistant("Один два", "streaming")]}
+      />
+    )
+    expect(viewport.scrollTop).toBe(800)
+    viewport.scrollTop = 100
+    fireEvent.scroll(viewport)
+    height = 1400
+    rerender(
+      <ChatConversation
+        {...props}
+        messages={[assistant("Один два три", "streaming")]}
+      />
+    )
+    expect(viewport.scrollTop).toBe(100)
+    const observer = observers.find(
+      (entry) => entry.targets.includes(viewport) && entry.targets.length === 2
+    )!
+    act(() => observer.callback([], {} as ResizeObserver))
+    expect(viewport.scrollTop).toBe(100)
+    viewport.scrollTop = 950
+    fireEvent.scroll(viewport)
+    height = 1600
+    act(() => observer.callback([], {} as ResizeObserver))
+    expect(viewport.scrollTop).toBe(1200)
+    unmount()
+    expect(disconnect).toHaveBeenCalled()
+  })
+  it("scrolls to the outgoing message even when its author was reading older history", () => {
+    let height = 1000
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockImplementation(
+      () => height
+    )
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(400)
+    const props = { onSend: vi.fn(), onStop: vi.fn() }
+    const existing = assistant("Ответ")
+    const { container, rerender } = render(
+      <ChatConversation {...props} messages={[existing]} />
+    )
+    const viewport = container.querySelector<HTMLElement>(
+      '[data-slot="message-scroller-viewport"]'
+    )!
+    viewport.scrollTop = 100
+    fireEvent.scroll(viewport)
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "Вопрос" },
+    })
+    fireEvent.submit(screen.getByRole("textbox").closest("form")!)
+    expect(viewport.scrollTop).toBe(600)
+    height = 1200
+    rerender(
+      <ChatConversation
+        {...props}
+        messages={[
+          existing,
+          { ...assistant("Вопрос"), id: "new", role: "user" },
+        ]}
+      />
+    )
+    expect(viewport.scrollTop).toBe(800)
+    expect(props.onSend).toHaveBeenCalledWith("Вопрос")
+  })
+})

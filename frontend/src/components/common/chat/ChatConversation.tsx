@@ -1,4 +1,10 @@
-import { useState, type FormEvent, type KeyboardEvent } from "react"
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react"
 import { ArrowUp, Check, Copy, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
@@ -24,6 +30,10 @@ import remarkGfm from "remark-gfm"
 import type { ChatMessage } from "@/types/chat"
 
 type ChatConversationProps = {
+  historyError?: string | null
+  isHistoryLoading?: boolean
+  hasMore?: boolean
+  onLoadOlder?: () => Promise<void>
   messages: ChatMessage[]
   isLoading?: boolean
   error?: string | null
@@ -40,6 +50,10 @@ const formatTime = (date: string) => {
 
 export function ChatConversation({
   messages,
+  historyError,
+  isHistoryLoading = false,
+  hasMore = false,
+  onLoadOlder,
   isLoading = false,
   error,
   onStop,
@@ -48,7 +62,86 @@ export function ChatConversation({
   const [message, setMessage] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const canSend = message.trim().length > 0 && !isLoading
+  const viewport = useRef<HTMLDivElement | null>(null)
+  const content = useRef<HTMLDivElement | null>(null)
+  const initialized = useRef(false)
+  const following = useRef(true)
+  const forceBottom = useRef(false)
+  const anchor = useRef<{
+    height: number
+    top: number
+    node: HTMLElement | null
+    offset: number
+    firstId?: string
+  } | null>(null)
+  const loadOlder = () => {
+    const element = viewport.current
+    if (!element || isHistoryLoading || !onLoadOlder) return
+    following.current = false
+    const node = element.querySelector<HTMLElement>("[data-message-id]")
+    anchor.current = {
+      node,
+      offset: node?.getBoundingClientRect().top ?? 0,
+      height: element.scrollHeight,
+      top: element.scrollTop,
+      firstId: messages[0]?.id,
+    }
+    void onLoadOlder()
+  }
+  useLayoutEffect(() => {
+    const element = viewport.current
+    if (!element) return
+    const previous = anchor.current
+    if (previous && !isHistoryLoading) {
+      if (previous.firstId !== messages[0]?.id)
+        element.scrollTop = previous.node?.isConnected
+          ? element.scrollTop +
+            previous.node.getBoundingClientRect().top -
+            previous.offset
+          : previous.top + element.scrollHeight - previous.height
+      anchor.current = null
+      return
+    }
+    if (anchor.current) return
+    if (
+      (!initialized.current && !isHistoryLoading && messages.length > 0) ||
+      forceBottom.current
+    ) {
+      initialized.current = true
+      forceBottom.current = false
+      following.current = true
+      element.scrollTop = Math.max(
+        0,
+        element.scrollHeight - element.clientHeight
+      )
+    } else if (initialized.current && following.current) {
+      element.scrollTop = Math.max(
+        0,
+        element.scrollHeight - element.clientHeight
+      )
+    }
+  }, [messages, isHistoryLoading])
+  useLayoutEffect(() => {
+    const element = viewport.current
+    const body = content.current
+    if (!element || !body) return
+    const observer = new ResizeObserver(() => {
+      if (initialized.current && following.current && !anchor.current) {
+        element.scrollTop = Math.max(
+          0,
+          element.scrollHeight - element.clientHeight
+        )
+      }
+    })
+    observer.observe(body)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  const canSend =
+    message.trim().length > 0 &&
+    !isLoading &&
+    !(isHistoryLoading && messages.length === 0) &&
+    !(historyError && messages.length === 0)
 
   const handleSubmit = (event?: FormEvent) => {
     event?.preventDefault()
@@ -57,6 +150,14 @@ export function ChatConversation({
 
     const text = message.trim()
 
+    forceBottom.current = true
+    following.current = true
+    if (viewport.current) {
+      viewport.current.scrollTop = Math.max(
+        0,
+        viewport.current.scrollHeight - viewport.current.clientHeight
+      )
+    }
     setMessage("")
     void onSend(text)
   }
@@ -81,24 +182,67 @@ export function ChatConversation({
       window.setTimeout(() => {
         setCopiedId((current) => (current === item.id ? null : current))
       }, 1800)
-    } catch {
-      // Clipboard может быть недоступен
-    }
+    } catch {}
   }
 
   return (
     <section className="flex min-h-0 flex-1 flex-col bg-background">
       {/* История сообщений */}
-      <MessageScrollerProvider>
+      <MessageScrollerProvider autoScroll={false} defaultScrollPosition="end">
         <MessageScroller className="relative flex min-h-0 flex-1 flex-col">
-          <MessageScrollerViewport className="min-h-0 flex-1 mask-none! [-webkit-mask-image:none]!">
-            <MessageScrollerContent className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end gap-7 px-5 pt-28 pb-6">
+          <MessageScrollerViewport
+            ref={viewport}
+            preserveScrollOnPrepend={false}
+            style={{ overflowAnchor: "none" }}
+            onScroll={(event) => {
+              const element = event.currentTarget
+              following.current =
+                element.scrollHeight -
+                  element.clientHeight -
+                  element.scrollTop <=
+                80
+              if (
+                initialized.current &&
+                event.currentTarget.scrollTop <= 40 &&
+                hasMore &&
+                !historyError
+              )
+                loadOlder()
+            }}
+            className="min-h-0 flex-1 mask-none! [-webkit-mask-image:none]!"
+          >
+            <MessageScrollerContent
+              ref={content}
+              className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end gap-7 px-5 pt-28 pb-6"
+            >
+              {(hasMore || isHistoryLoading || historyError) && (
+                <div className="text-center text-sm text-muted-foreground">
+                  {isHistoryLoading ? (
+                    <p role="status">Загружаем историю…</p>
+                  ) : historyError ? (
+                    <>
+                      <p role="alert">{historyError}</p>
+                      <Button variant="ghost" onClick={loadOlder}>
+                        Повторить загрузку
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="ghost" onClick={loadOlder}>
+                      Загрузить предыдущие сообщения
+                    </Button>
+                  )}
+                </div>
+              )}
               {messages.map((item) => {
                 const isUser = item.role === "user"
 
                 if (isUser) {
                   return (
-                    <Message key={item.id} align="end">
+                    <Message
+                      key={item.id}
+                      data-message-id={item.id}
+                      align="end"
+                    >
                       <MessageContent>
                         <Bubble>
                           <BubbleContent className="bg-avito-purple-light! wrap-break-word whitespace-pre-wrap text-black!">
@@ -106,7 +250,7 @@ export function ChatConversation({
                           </BubbleContent>
                         </Bubble>
 
-                        <MessageFooter className="mt-1 text-xs text-muted-foreground">
+                        <MessageFooter className="mt-1 text-xs font-normal text-muted-foreground">
                           {formatTime(item.createdAt)}
                         </MessageFooter>
                       </MessageContent>
@@ -117,6 +261,7 @@ export function ChatConversation({
                 return (
                   <Message
                     key={item.id}
+                    data-message-id={item.id}
                     aria-label="Ответ AI Buddy"
                     aria-busy={item.status === "streaming"}
                   >
@@ -124,7 +269,7 @@ export function ChatConversation({
                       {/* Ответ ассистента */}
                       <Bubble variant="muted">
                         <BubbleContent>
-                          <div className="prose prose-sm max-w-none overflow-x-auto prose-neutral dark:prose-invert">
+                          <div className="prose prose-sm max-w-none overflow-x-auto prose-neutral dark:prose-invert prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {item.content}
                             </ReactMarkdown>
@@ -139,7 +284,7 @@ export function ChatConversation({
                             Ответ не завершён
                           </span>
                         )}
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs font-normal text-muted-foreground">
                           {formatTime(item.createdAt)}
                         </span>
 
@@ -189,11 +334,7 @@ export function ChatConversation({
               {error}
             </p>
           )}
-          {isLoading && messages.at(-1)?.content && (
-            <p role="status" className="mb-2 text-xs text-muted-foreground">
-              AI Buddy отвечает…
-            </p>
-          )}
+
           <form onSubmit={handleSubmit}>
             <InputGroup>
               <InputGroupTextarea

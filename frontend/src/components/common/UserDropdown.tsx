@@ -44,9 +44,8 @@ const getInitialTheme = (): Theme => {
 export const UserDropdown = () => {
   const { user } = useAuth()
   const { logout, isLoading, error } = useLogout()
-  const name = user?.name ?? ""
-  const role = user?.role ?? ""
-  const avatar = user?.avatar
+  const name = user?.email ?? ""
+  const role = user?.team_role ?? ""
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
 
   const initials = name
@@ -86,7 +85,7 @@ export const UserDropdown = () => {
           className="group flex cursor-pointer items-center gap-2 p-1"
         >
           <Avatar className="size-11">
-            <AvatarImage src={avatar} alt={name} className="grayscale" />
+            <AvatarImage src={undefined} alt={name} className="grayscale" />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
@@ -99,7 +98,7 @@ export const UserDropdown = () => {
             <DropdownMenuLabel className="px-3 py-3">
               <div className="flex items-center gap-3">
                 <Avatar className="size-11">
-                  <AvatarImage src={avatar} alt={name} />
+                  <AvatarImage src={undefined} alt={name} />
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
 
@@ -107,7 +106,7 @@ export const UserDropdown = () => {
                   <p className="truncate text-sm font-semibold tracking-tight">
                     {name}{" "}
                     <Badge className="ml-1" variant={"secondary"}>
-                      Стажер
+                      {role}
                     </Badge>
                   </p>
 

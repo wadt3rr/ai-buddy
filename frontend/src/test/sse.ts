@@ -1,5 +1,6 @@
-import { ApiError, isRecord } from "./client"
-import type { ChatStreamEvent } from "@/types/chat"
+import { ApiError, isRecord } from "@/api/client"
+export type ChatStreamEvent =
+  { type: "delta"; content: string } | { type: "done" }
 
 /** Incremental SSE framing, independent of network and UTF-8 chunk boundaries. */
 export function createSseParser(onEvent: (event: ChatStreamEvent) => void) {

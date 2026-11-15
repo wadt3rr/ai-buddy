@@ -1,68 +1,42 @@
 # Avito AI Buddy
 
-## Установка и запуск
+Фронтенд чат-помощника для адаптации стажёров. В приложении есть вход по почте и паролю, история переписки, отправка сообщений и переключение темы.
 
-Нужны Node.js 24 и npm. Выполняйте команды в каталоге с `package.json`:
+Проект написан на React и TypeScript. Для сборки используется Vite, для стилей — Tailwind CSS, для запросов — Axios. Ответы ассистента отображаются в Markdown.
 
-```sh
-npm install
-cp .env.example .env.local
-npm run dev
-```
+## Локальный запуск
 
-Откройте адрес из терминала — обычно http://localhost:5173.
+Нужны Node.js 24, npm и запущенный backend с PostgreSQL.
 
-## Переменные окружения и запуск с моками
-
-Локальные настройки задаются в `.env.local`. Для запуска без backend оставьте:
-
-```dotenv
-VITE_API_URL=/api
-VITE_ENABLE_MOCKS=true
-```
-
-`VITE_API_URL` — базовый адрес API с префиксом `/api`. `VITE_ENABLE_MOCKS` включает MSW только при значении `true`. В режиме разработки моки также включены по умолчанию через `.env.development`.
-
-Данные для входа: **intern@avito.ru** / **password123**. MSW запускается автоматически; отдельный сервер не нужен.
-
-## Запуск с настоящим backend
-
-В `.env.local` отключите моки и укажите адрес своего API вместо примера:
-
-```dotenv
-VITE_API_URL=http://localhost:8000/api
-VITE_ENABLE_MOCKS=false
-```
-
-После изменения переменных перезапустите frontend:
-
-```sh
-npm run dev
-```
-
-Для API на другом origin backend должен разрешать CORS с cookies для адреса frontend. Vite proxy в проекте не настроен.
-
-## Тестирование
-
-```sh
-npm test                   # Все тесты
-npm run test:watch         # Повтор при изменении файлов
-npm run test:coverage      # Покрытие
-```
-
-HTML-отчёт: `coverage/index.html`. Порог покрытия строк — 80,01%.
-
-## Дополнительные команды
-
-```sh
-npm run build             # Сборка в dist/
-npm run preview           # Просмотр готовой сборки
-npm run typecheck         # Проверка TypeScript
-npm run lint              # Проверка ESLint
-```
-
-Если PowerShell блокирует `npm.ps1`, используйте `npm.cmd` вместо `npm`:
+Команды из каталога `frontend` для PowerShell
 
 ```powershell
+npm.cmd install
+Copy-Item .env.example .env.local
 npm.cmd run dev
 ```
+
+Адрес приложения выводится в терминале. По умолчанию — http://localhost:5173/.
+
+## Переменные окружения
+
+Настройки фронтенда задаются в `.env.local`.
+
+| Переменная | Значение по умолчанию | Назначение |
+| --- | --- | --- |
+| `VITE_API_URL` | `/api/v1` | Базовый путь API |
+| `BACKEND_URL` | `http://localhost:8080` | Адрес backend для Vite proxy |
+
+После изменения настроек нужно перезапустить Vite.
+
+## Команды
+
+```powershell
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run test
+npm.cmd run test:coverage
+npm.cmd run build
+```
+
+Сборка сохраняется в `dist/`. Подробности тестирования — в [TESTING.md](TESTING.md).

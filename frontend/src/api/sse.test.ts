@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
-import { createSseParser, readChatStream } from "./sse"
-import type { ChatStreamEvent } from "@/types/chat"
+import { createSseParser, readChatStream } from "@/test/sse"
+import type { ChatStreamEvent } from "@/test/sse"
 
 const encode = (text: string) => new TextEncoder().encode(text)
 function body(chunks: Uint8Array[]) {

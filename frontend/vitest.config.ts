@@ -14,11 +14,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      // Include local UI wrappers, entry points and mocks used by the runtime demo.
+      // Measure runtime code, including local UI wrappers and entry points.
       exclude: [
         "src/**/*.test.{ts,tsx}",
         "src/**/*.spec.{ts,tsx}",
         "src/test/**",
+        "src/mocks/**",
         "src/**/*.d.ts",
       ],
       reporter: ["text", "html", "json-summary", "json"],
