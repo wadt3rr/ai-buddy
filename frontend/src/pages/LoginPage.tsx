@@ -33,7 +33,9 @@ export function LoginPage() {
                   aria-hidden="true"
                   className="absolute -inset-x-1.5 top-[12%] bottom-[8%] -rotate-2 bg-avito-pink-light"
                 />
-                <span className="relative z-10">возвращением!</span>
+                <span className="relative z-10 dark:text-background">
+                  возвращением!
+                </span>
               </span>
             </h1>
           </div>
