@@ -1,20 +1,17 @@
 import { act, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
-import { delay, http, HttpResponse } from "msw"
-import { describe, expect, it } from "vitest"
-import { apiUrl } from "@/api/client"
+import * as authApi from "@/api/auth.api"
+import { describe, expect, it, vi } from "vitest"
 import { AuthProvider } from "@/contexts/AuthContext"
-import { DEMO_COOKIE } from "@/mocks/handlers"
 import { LoginPage } from "@/pages/LoginPage"
-import { server } from "@/test/server"
 import { setMediaMatch } from "@/test/media"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "./Header"
 
 function renderHeader() {
-  document.cookie = `${DEMO_COOKIE}=active; Path=/`
+  localStorage.setItem("ai_buddy_access_token", "test-token")
   return render(
     <ThemeProvider>
       <AuthProvider>
@@ -38,7 +35,7 @@ describe("Header and UserDropdown", () => {
     const trigger = await screen.findByRole("button", {
       name: "Меню пользователя",
     })
-    expect(screen.getByRole("link", { name: "AI Buddy" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "AI-Buddy" })).toHaveAttribute(
       "href",
       "/"
     )
@@ -46,8 +43,8 @@ describe("Header and UserDropdown", () => {
     trigger.focus()
     await user.keyboard("{Enter}")
     expect(await screen.findByRole("menu")).toBeInTheDocument()
-    expect(screen.getByText("Анна Иванова")).toBeInTheDocument()
-    expect(screen.getByText("Frontend-разработчик")).toBeInTheDocument()
+    expect(screen.getByText("intern@avito.ru")).toBeInTheDocument()
+    expect(screen.getAllByText("Frontend-разработчик")).toHaveLength(2)
     await user.keyboard("{Escape}")
     await waitFor(() =>
       expect(screen.queryByRole("menu")).not.toBeInTheDocument()
@@ -94,30 +91,29 @@ describe("Header and UserDropdown", () => {
 
   it("shows a logout failure, preserves user access, and allows a successful retry", async () => {
     const user = userEvent.setup()
-    server.use(
-      http.post(
-        apiUrl("/auth/logout"),
-        () => new HttpResponse(null, { status: 503 })
-      )
-    )
+    const remove = vi
+      .spyOn(Storage.prototype, "removeItem")
+      .mockImplementationOnce(() => {
+        throw new Error("Storage failed")
+      })
     renderHeader()
     await user.click(
       await screen.findByRole("button", { name: "Меню пользователя" })
     )
     await user.click(await screen.findByRole("menuitem", { name: "Выйти" }))
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Сервер временно недоступен"
+      "Не удалось получить ответ"
     )
     expect(
       screen.getByRole("button", { name: "Меню пользователя" })
     ).toBeInTheDocument()
-    server.resetHandlers()
+    remove.mockRestore()
     await user.click(screen.getByRole("button", { name: "Меню пользователя" }))
     await user.click(await screen.findByRole("menuitem", { name: "Выйти" }))
     expect(
       await screen.findByRole("button", { name: "Войти в аккаунт" })
     ).toBeInTheDocument()
-    expect(document.cookie).not.toContain(DEMO_COOKIE)
+    expect(localStorage.getItem("ai_buddy_access_token")).toBeNull()
   })
 
   it("prevents a second logout while the first request is pending", async () => {
@@ -127,14 +123,11 @@ describe("Header and UserDropdown", () => {
     const pending = new Promise<void>((resolve) => {
       finish = resolve
     })
-    server.use(
-      http.post(apiUrl("/auth/logout"), async () => {
-        requests++
-        await pending
-        await delay(0)
-        return new HttpResponse(null, { status: 204 })
-      })
-    )
+    vi.spyOn(authApi, "logoutRequest").mockImplementation(async () => {
+      requests++
+      await pending
+      localStorage.removeItem("ai_buddy_access_token")
+    })
     renderHeader()
     await user.click(
       await screen.findByRole("button", { name: "Меню пользователя" })

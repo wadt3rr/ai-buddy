@@ -1,13 +1,12 @@
 import { StrictMode } from "react"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { delay, http, HttpResponse } from "msw"
 import { apiUrl, client } from "@/api/client"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { LoginPage } from "@/pages/LoginPage"
-import { DEMO_COOKIE } from "@/mocks/handlers"
 import { mockUser } from "@/mocks/data"
 import { server } from "@/test/server"
 import { useAuth } from "./useAuth"
@@ -15,7 +14,7 @@ import { useLogout } from "./useLogout"
 
 function AnotherConsumer() {
   const { user } = useAuth()
-  return <span>{user?.role}</span>
+  return <span>{user?.team_role}</span>
 }
 
 function ChatFixture() {
@@ -23,7 +22,7 @@ function ChatFixture() {
   const { logout, isLoading, error } = useLogout()
   return (
     <>
-      <h1>Чат {user?.name}</h1>
+      <h1>Чат {user?.email}</h1>
       <AnotherConsumer />
       <button disabled={isLoading} onClick={() => void logout()}>
         Выйти
@@ -65,7 +64,7 @@ async function submitLogin(
   fireEvent.click(screen.getByRole("button", { name: "Войти в аккаунт" }))
 }
 
-describe("cookie authentication and protected routes", () => {
+describe("JWT authentication and protected routes", () => {
   it("hides protected content during the session check and redirects guests", async () => {
     renderApp()
     expect(
@@ -83,7 +82,10 @@ describe("cookie authentication and protected routes", () => {
       http.post(apiUrl("/auth/login"), async () => {
         requests++
         await delay(100)
-        return HttpResponse.json({ user: mockUser })
+        return HttpResponse.json({
+          access_token: "test-token",
+          token_type: "Bearer",
+        })
       })
     )
     renderApp("/")
@@ -93,11 +95,11 @@ describe("cookie authentication and protected routes", () => {
       screen.getByRole("button", { name: "Входим…" }).closest("form")!
     )
     expect(
-      await screen.findByRole("heading", { name: "Чат Анна Иванова" })
+      await screen.findByRole("heading", { name: "Чат intern@avito.ru" })
     ).toBeInTheDocument()
-    expect(screen.getByText(mockUser.role)).toBeInTheDocument()
+    expect(screen.getByText(mockUser.team_role)).toBeInTheDocument()
     expect(requests).toBe(1)
-    expect(client.defaults.withCredentials).toBe(true)
+    expect(client.defaults.withCredentials).toBe(false)
   })
 
   it.each([
@@ -114,37 +116,37 @@ describe("cookie authentication and protected routes", () => {
   })
 
   it("restores the session after remount, checks me only once per provider even in StrictMode, and redirects from login", async () => {
-    document.cookie = `${DEMO_COOKIE}=active; Path=/`
+    localStorage.setItem("ai_buddy_access_token", "test-token")
     let requests = 0
     server.use(
-      http.get(apiUrl("/auth/me"), () => {
+      http.get(apiUrl("/users/me"), () => {
         requests++
-        return HttpResponse.json({ user: mockUser })
+        return HttpResponse.json(mockUser)
       })
     )
     const first = renderApp("/")
     expect(
-      await screen.findByRole("heading", { name: "Чат Анна Иванова" })
+      await screen.findByRole("heading", { name: "Чат intern@avito.ru" })
     ).toBeInTheDocument()
     expect(requests).toBe(1)
     first.unmount()
     renderApp()
     expect(
-      await screen.findByRole("heading", { name: "Чат Анна Иванова" })
+      await screen.findByRole("heading", { name: "Чат intern@avito.ru" })
     ).toBeInTheDocument()
     expect(requests).toBe(2)
   })
 
-  it("persists the mock session across reloads and removes it on logout", async () => {
+  it("persists the JWT session across reloads and removes it on logout", async () => {
     const first = renderApp("/")
     await submitLogin()
-    await screen.findByRole("heading", { name: "Чат Анна Иванова" })
-    expect(document.cookie).toContain(`${DEMO_COOKIE}=active`)
+    await screen.findByRole("heading", { name: "Чат intern@avito.ru" })
+    expect(localStorage.getItem("ai_buddy_access_token")).toBe("test-token")
     first.unmount()
     const second = renderApp()
     fireEvent.click(await screen.findByRole("button", { name: "Выйти" }))
     await screen.findByRole("button", { name: "Войти в аккаунт" })
-    expect(document.cookie).not.toContain(DEMO_COOKIE)
+    expect(localStorage.getItem("ai_buddy_access_token")).toBeNull()
     second.unmount()
     renderApp()
     expect(
@@ -153,17 +155,21 @@ describe("cookie authentication and protected routes", () => {
   })
 
   it("keeps the current user when logout fails and permits retry", async () => {
-    document.cookie = `${DEMO_COOKIE}=active; Path=/`
-    document.cookie = "avito_buddy_mock_failure=logout; Path=/"
+    localStorage.setItem("ai_buddy_access_token", "test-token")
+    const remove = vi
+      .spyOn(Storage.prototype, "removeItem")
+      .mockImplementationOnce(() => {
+        throw new Error("Storage failed")
+      })
     renderApp()
     fireEvent.click(await screen.findByRole("button", { name: "Выйти" }))
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Сервер временно недоступен"
+      "Не удалось получить ответ"
     )
     expect(
-      screen.getByRole("heading", { name: "Чат Анна Иванова" })
+      screen.getByRole("heading", { name: "Чат intern@avito.ru" })
     ).toBeInTheDocument()
-    document.cookie = "avito_buddy_mock_failure=; Max-Age=0; Path=/"
+    remove.mockRestore()
     fireEvent.click(screen.getByRole("button", { name: "Выйти" }))
     expect(
       await screen.findByRole("button", { name: "Войти в аккаунт" })
@@ -171,7 +177,7 @@ describe("cookie authentication and protected routes", () => {
   })
 
   it("shows session-check failures with a retry instead of flashing login or protected content", async () => {
-    document.cookie = `${DEMO_COOKIE}=active; Path=/`
+    localStorage.setItem("ai_buddy_access_token", "test-token")
     document.cookie = "avito_buddy_mock_failure=me; Path=/"
     renderApp()
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -183,22 +189,22 @@ describe("cookie authentication and protected routes", () => {
     document.cookie = "avito_buddy_mock_failure=; Max-Age=0; Path=/"
     fireEvent.click(screen.getByRole("button", { name: "Повторить проверку" }))
     expect(
-      await screen.findByRole("heading", { name: "Чат Анна Иванова" })
+      await screen.findByRole("heading", { name: "Чат intern@avito.ru" })
     ).toBeInTheDocument()
   })
 
   it("invalidates the session when a protected API returns 401", async () => {
-    document.cookie = `${DEMO_COOKIE}=active; Path=/`
+    localStorage.setItem("ai_buddy_access_token", "test-token")
     renderApp()
-    await screen.findByRole("heading", { name: "Чат Анна Иванова" })
+    await screen.findByRole("heading", { name: "Чат intern@avito.ru" })
     server.use(
-      http.post(
-        apiUrl("/auth/logout"),
+      http.get(
+        apiUrl("/messages"),
         () => new HttpResponse(null, { status: 401 })
       )
     )
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Выйти" }))
+      await expect(client.get("/messages")).rejects.toBeDefined()
     })
     await waitFor(() =>
       expect(

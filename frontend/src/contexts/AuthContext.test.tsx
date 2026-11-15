@@ -29,10 +29,10 @@ describe("AuthContext edge cases", () => {
       complete = resolve
     })
     server.use(
-      http.get(apiUrl("/auth/me"), async () => {
+      http.get(apiUrl("/users/me"), async () => {
         requests++
         await gate
-        return HttpResponse.json({ user: mockUser })
+        return HttpResponse.json(mockUser)
       })
     )
     let first: Promise<void> = Promise.resolve()

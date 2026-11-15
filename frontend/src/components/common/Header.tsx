@@ -9,12 +9,14 @@ export const Header = () => {
             href="/"
             className="relative z-10 font-heading text-2xl font-bold tracking-tight"
           >
-            AI Buddy
+            AI-Buddy
           </a>
 
-          <div className="absolute top-6 left-[95%] z-20 w-max -rotate-2">
-            <div className="bg-avito-green-light px-2 py-1 text-black">
-              <span className="block font-caveat text-base whitespace-nowrap sm:text-xl">
+          <div className="absolute top-6 left-[95%] z-20 w-max">
+            <div className="relative px-2 py-1">
+              <div className="absolute inset-0 -rotate-2 bg-avito-green-light" />
+
+              <span className="relative block font-caveat text-base whitespace-nowrap text-black sm:text-xl">
                 Начни с большего
               </span>
             </div>

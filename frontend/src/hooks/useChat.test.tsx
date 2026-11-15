@@ -1,221 +1,275 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
-import { http, HttpResponse } from "msw"
+import { delay, http, HttpResponse } from "msw"
 import { apiUrl } from "@/api/client"
-import { DEMO_COOKIE } from "@/mocks/handlers"
 import { server } from "@/test/server"
 import { useChat } from "./useChat"
-
-function authenticate() {
-  document.cookie = `${DEMO_COOKIE}=active; Path=/`
+const msg = (id: string, role = "user") => ({
+  id,
+  role,
+  content: id,
+  created_at: "2026-11-15T10:00:00Z",
+})
+async function ready(result: { current: ReturnType<typeof useChat> }) {
+  await waitFor(() => expect(result.current.isHistoryLoading).toBe(false))
 }
-
-describe("useChat with the mock API", () => {
-  it("adds user immediately and progressively appends chunks to one assistant message", async () => {
-    authenticate()
-    const { result } = renderHook(useChat)
-    let pending: Promise<void> = Promise.resolve()
-    act(() => {
-      pending = result.current.sendMessage("Как познакомиться с командой?")
+function pages() {
+  const requests: (string | null)[] = []
+  server.use(
+    http.get(apiUrl("/messages"), async ({ request }) => {
+      const url = new URL(request.url)
+      expect(url.searchParams.get("limit")).toBe("50")
+      const before = url.searchParams.get("before")
+      requests.push(before)
+      await delay(10)
+      return HttpResponse.json(
+        before
+          ? { messages: [msg("1"), msg("2"), msg("3")], next_before: null }
+          : { messages: [msg("3"), msg("4")], next_before: "3" }
+      )
+    })
+  )
+  return requests
+}
+describe("useChat backend history and sending", () => {
+  it("loads only the first page on mount", async () => {
+    const requests = pages()
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    expect(result.current.messages.map((m) => m.id)).toEqual(["3", "4"])
+    expect(result.current.hasMore).toBe(true)
+    expect(requests).toEqual([null])
+  })
+  it("prepends older pages in server order, deduplicates and ends pagination", async () => {
+    const requests = pages()
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    await act(async () => {
+      await result.current.loadOlder()
+    })
+    expect(result.current.messages.map((m) => m.id)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+    ])
+    expect(result.current.hasMore).toBe(false)
+    await act(async () => {
+      await result.current.loadOlder()
+    })
+    expect(requests).toEqual([null, "3"])
+  })
+  it("coalesces simultaneous pagination requests", async () => {
+    const requests = pages()
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    await act(async () => {
+      await Promise.all([
+        result.current.loadOlder(),
+        result.current.loadOlder(),
+      ])
+    })
+    expect(requests).toEqual([null, "3"])
+  })
+  it("retries an initial history error", async () => {
+    server.use(
+      http.get(
+        apiUrl("/messages"),
+        () => new HttpResponse(null, { status: 500 })
+      )
+    )
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    expect(result.current.historyError).toContain("Сервер временно недоступен")
+    server.resetHandlers()
+    await act(async () => {
+      await result.current.loadOlder()
+    })
+    expect(result.current.historyError).toBeNull()
+    expect(result.current.messages).toEqual([])
+  })
+  it("keeps its cursor after a page error and retries the same page", async () => {
+    pages()
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    server.use(http.get(apiUrl("/messages"), () => HttpResponse.error()))
+    await act(async () => {
+      await result.current.loadOlder()
     })
     expect(result.current.messages).toHaveLength(2)
-    expect(result.current.messages[0]).toMatchObject({
-      role: "user",
-      content: "Как познакомиться с командой?",
+    expect(result.current.hasMore).toBe(true)
+    expect(result.current.historyError).toContain("подключение")
+    const requests = pages()
+    await act(async () => {
+      await result.current.loadOlder()
     })
-    expect(result.current.messages[1]).toMatchObject({
-      role: "assistant",
-      content: "",
-      status: "streaming",
+    expect(requests).toEqual(["3"])
+  })
+  it("resets account history and ignores late responses from the previous session", async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
     })
-    const id = result.current.messages[1].id
-    await waitFor(
-      () =>
-        expect(result.current.messages[1].content.length).toBeGreaterThan(0),
-      { interval: 10 }
+    let started = false
+    server.use(
+      http.get(apiUrl("/messages"), async () => {
+        started = true
+        await gate
+        return HttpResponse.json({
+          messages: [msg("old-account")],
+          next_before: "old",
+        })
+      })
     )
-    const firstText = result.current.messages[1].content
+    const { result, rerender } = renderHook(({ account }) => useChat(account), {
+      initialProps: { account: "a" },
+    })
+    await waitFor(() => expect(started).toBe(true))
+    server.use(
+      http.get(apiUrl("/messages"), () =>
+        HttpResponse.json({ messages: [msg("new-account")], next_before: null })
+      )
+    )
+    rerender({ account: "b" })
+    await ready(result)
+    await act(async () => {
+      release()
+      await delay(20)
+    })
+    expect(result.current.messages.map((m) => m.id)).toEqual(["new-account"])
+    expect(result.current.hasMore).toBe(false)
+  })
+  it("combines concurrent history loading and a JSON assistant response", async () => {
+    pages()
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    await act(async () => {
+      await Promise.all([
+        result.current.loadOlder(),
+        result.current.sendMessage("Вопрос"),
+      ])
+    })
+    expect(result.current.messages.slice(0, 4).map((m) => m.id)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+    ])
+    expect(result.current.messages.slice(4).map((m) => m.content)).toEqual([
+      "Вопрос",
+      "Ответ сервера",
+    ])
+    expect(result.current.isStreaming).toBe(false)
+  })
+  it("ignores empty and concurrent sends and validates UTF-8 byte size", async () => {
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    await act(async () => {
+      await result.current.sendMessage(" ")
+      await result.current.sendMessage("я".repeat(5001))
+    })
+    expect(result.current.messages).toHaveLength(0)
+    expect(result.current.error).toContain("10000 байт")
+    await act(async () => {
+      await Promise.all([
+        result.current.sendMessage("Вопрос"),
+        result.current.sendMessage("Вопрос"),
+      ])
+    })
+    expect(result.current.messages).toHaveLength(2)
+    expect(result.current.error).toBeNull()
+  })
+  it("preserves the saved user message on 502 and allows a following question", async () => {
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    server.use(
+      http.post(apiUrl("/messages"), () =>
+        HttpResponse.json(
+          {
+            user_message: msg("saved"),
+            error: { code: "assistant_unavailable", message: "Failed" },
+          },
+          { status: 502 }
+        )
+      )
+    )
+    await act(async () => {
+      await result.current.sendMessage("Вопрос")
+    })
+    expect(result.current.messages.map((m) => m.id)).toEqual(["saved"])
+    expect(result.current.error).toContain("Сообщение сохранено")
+    server.resetHandlers()
+    await act(async () => {
+      await result.current.sendMessage("Следующий")
+    })
+    expect(result.current.messages).toHaveLength(3)
+  })
+  it("cancels waiting, reconciles server history and can send again", async () => {
+    const { result } = renderHook(() => useChat())
+    await ready(result)
+    server.use(
+      http.post(apiUrl("/messages"), async () => {
+        await delay(100)
+        return new HttpResponse(null, { status: 500 })
+      })
+    )
+    let pending!: Promise<void>
+    act(() => {
+      pending = result.current.sendMessage("Вопрос")
+    })
     expect(result.current.isStreaming).toBe(true)
-    expect(result.current.timeToFirstChunkMs).toBeGreaterThan(0)
-    expect(result.current.timeToFirstChunkMs).toBeLessThan(1000)
-    await waitFor(
-      () =>
-        expect(result.current.messages[1].content.length).toBeGreaterThan(
-          firstText.length
-        ),
-      { interval: 10 }
-    )
+    act(() => result.current.stopGeneration())
     await act(async () => {
       await pending
     })
-    expect(result.current.messages).toHaveLength(2)
-    expect(result.current.messages[1]).toMatchObject({
-      id,
-      status: "completed",
-    })
-    expect(result.current.messages[1].content).toContain(firstText)
     expect(result.current.isStreaming).toBe(false)
-    expect(result.current.error).toBeNull()
-  })
-
-  it("ignores empty messages and concurrent sends", async () => {
-    authenticate()
-    const { result } = renderHook(useChat)
+    expect(result.current.error).toContain("отменено")
+    expect(result.current.messages).toHaveLength(0)
+    server.resetHandlers()
     await act(async () => {
-      await result.current.sendMessage("   ")
-    })
-    expect(result.current.messages).toEqual([])
-    let first: Promise<void> = Promise.resolve()
-    act(() => {
-      first = result.current.sendMessage("Первый день")
-      void result.current.sendMessage("Дубликат")
+      await result.current.sendMessage("Вопрос")
     })
     expect(result.current.messages).toHaveLength(2)
-    act(() => result.current.stopGeneration())
-    await act(async () => {
-      await first
-    })
   })
-
-  it("keeps received text on cancellation and can immediately start another generation", async () => {
-    authenticate()
-    const { result } = renderHook(useChat)
-    let first: Promise<void> = Promise.resolve()
-    act(() => {
-      first = result.current.sendMessage("Первый день")
-    })
-    await waitFor(
-      () => expect(result.current.messages[1].content).not.toBe(""),
-      { interval: 10 }
-    )
-    const received = result.current.messages[1].content
-    act(() => result.current.stopGeneration())
-    expect(result.current.isStreaming).toBe(false)
-    expect(result.current.messages[1]).toMatchObject({
-      content: received,
-      status: "completed",
-    })
-    expect(result.current.error).toBeNull()
-    let second: Promise<void> = Promise.resolve()
-    act(() => {
-      second = result.current.sendMessage("К кому обращаться за помощью?")
-    })
-    await act(async () => {
-      await first
-    })
-    expect(result.current.isStreaming).toBe(true)
-    await act(async () => {
-      await second
-    })
-    expect(result.current.messages).toHaveLength(4)
-    expect(result.current.messages[1].content).toBe(received)
-    expect(result.current.messages[3].status).toBe("completed")
-  })
-
-  it("retains partial text when the server sends an error event", async () => {
-    authenticate()
-    const { result } = renderHook(useChat)
-    await act(async () => {
-      await result.current.sendMessage("/mock:error-mid")
-    })
-    expect(result.current.messages).toHaveLength(2)
-    expect(result.current.messages[1].content.length).toBeGreaterThan(0)
-    expect(result.current.messages[1].status).toBe("error")
-    expect(result.current.error).toContain("Полученный текст сохранён")
-    expect(result.current.isStreaming).toBe(false)
-  })
-
-  it.each([
-    ["/mock:error-before", "Сервер временно недоступен"],
-    ["/mock:empty", "пустой ответ"],
-  ])("handles %s", async (message, expected) => {
-    authenticate()
-    const { result } = renderHook(useChat)
-    await act(async () => {
-      await result.current.sendMessage(message)
-    })
-    expect(result.current.error).toContain(expected)
-    expect(result.current.messages[1]).toMatchObject({
-      status: "error",
-      content: "",
-    })
-    expect(result.current.isStreaming).toBe(false)
-  })
-
-  it("handles HTTP 401 and network errors", async () => {
-    const { result } = renderHook(useChat)
-    await act(async () => {
-      await result.current.sendMessage("Привет")
-    })
-    expect(result.current.error).toContain("Сессия завершена")
-    server.use(http.post(apiUrl("/chat/stream"), () => HttpResponse.error()))
-    await act(async () => {
-      await result.current.sendMessage("Ещё раз")
-    })
-    expect(result.current.error).toContain("подключение")
-  })
-
-  it.each([
-    ["event: delta\ndata: broken\n\n", "некорректные данные"],
-    ["", "Соединение прервалось"],
-  ])(
-    "retains the received prefix on malformed data or premature EOF",
-    async (ending, expected) => {
+  it.each([401, 500])(
+    "handles send HTTP %i and retains history if reconciliation fails",
+    async (status) => {
+      const { result } = renderHook(() => useChat())
+      await ready(result)
       server.use(
         http.post(
-          apiUrl("/chat/stream"),
-          () =>
-            new HttpResponse(
-              'event: delta\ndata: {"content":"Сохранённый текст"}\n\n' +
-                ending,
-              { headers: { "Content-Type": "text/event-stream" } }
-            )
-        )
+          apiUrl("/messages"),
+          () => new HttpResponse(null, { status })
+        ),
+        http.get(apiUrl("/messages"), () => HttpResponse.error())
       )
-      const { result } = renderHook(useChat)
       await act(async () => {
-        await result.current.sendMessage("Привет")
+        await result.current.sendMessage("Вопрос")
       })
-      expect(result.current.messages[1]).toMatchObject({
-        content: "Сохранённый текст",
-        status: "error",
-      })
-      expect(result.current.error).toContain(expected)
+      expect(result.current.error).toBeTruthy()
+      expect(result.current.messages).toEqual([])
     }
   )
-
-  it("rejects an unexpected response format", async () => {
-    server.use(
-      http.post(apiUrl("/chat/stream"), () =>
-        HttpResponse.json({ content: "not SSE" })
-      )
-    )
-    const { result } = renderHook(useChat)
-    await act(async () => {
-      await result.current.sendMessage("Привет")
-    })
-    expect(result.current.error).toContain("неподдерживаемый формат")
-  })
-
-  it("aborts the active request on unmount", async () => {
-    authenticate()
-    const actualFetch = globalThis.fetch
-    let requestSignal: AbortSignal | null | undefined
-    vi.stubGlobal(
-      "fetch",
-      vi.fn<typeof fetch>((input, init) => {
-        requestSignal = init?.signal
-        return actualFetch(input, init)
+  it("aborts pending work on unmount", async () => {
+    const { result, unmount } = renderHook(() => useChat())
+    await ready(result)
+    let signal: AbortSignal | undefined
+    const { client } = await import("@/api/client")
+    const post = vi
+      .spyOn(client, "post")
+      .mockImplementation((_url, _body, config) => {
+        signal = config?.signal as AbortSignal
+        return new Promise((_resolve, reject) =>
+          signal!.addEventListener("abort", () => reject(new Error("aborted")))
+        )
       })
-    )
-    const { result, unmount } = renderHook(useChat)
-    let pending: Promise<void> = Promise.resolve()
+    let pending!: Promise<void>
     act(() => {
-      pending = result.current.sendMessage("Привет")
+      pending = result.current.sendMessage("Вопрос")
     })
-    expect(requestSignal?.aborted).toBe(false)
     unmount()
     await pending
-    expect(requestSignal?.aborted).toBe(true)
+    expect(signal?.aborted).toBe(true)
+    post.mockRestore()
   })
 })
