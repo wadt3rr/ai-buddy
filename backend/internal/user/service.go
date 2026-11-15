@@ -38,6 +38,10 @@ func (s *Service) Create(
 		return nil, errors.New("password must contain at least 12 characters")
 	}
 
+	if strings.TrimSpace(teamRole) == "" {
+		return nil, errors.New("team role is required")
+	}
+
 	hash, err := hashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
