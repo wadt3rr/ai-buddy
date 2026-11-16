@@ -19,7 +19,7 @@ def run(base):
         request = urllib.request.Request(base + path, headers=headers, method=method,
                                          data=json.dumps(data).encode() if data is not None else None)
         try:
-            response = urllib.request.urlopen(request, timeout=100)
+            response = urllib.request.urlopen(request, timeout=230)
         except urllib.error.HTTPError as exc:
             response = exc
         with response:

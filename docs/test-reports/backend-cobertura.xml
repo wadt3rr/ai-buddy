@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage line-rate="0.88193744" branch-rate="0" version="" timestamp="1794795554550" lines-covered="874" lines-valid="991" branches-covered="0" branches-valid="0" complexity="0">
+<coverage line-rate="0.88193744" branch-rate="0" version="" timestamp="1794803825438" lines-covered="874" lines-valid="991" branches-covered="0" branches-valid="0" complexity="0">
   <sources>
     <source>/workspace/scratch/93e7d427ebea/ai-buddy/backend</source>
   </sources>

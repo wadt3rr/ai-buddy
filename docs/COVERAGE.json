@@ -5,9 +5,9 @@
     "percent": 88.19
   },
   "ai_service": {
-    "covered": 405,
-    "total": 409,
-    "percent": 99.02
+    "covered": 476,
+    "total": 480,
+    "percent": 99.17
   },
   "frontend": {
     "covered": 593,
@@ -15,9 +15,9 @@
     "percent": 96.58
   },
   "combined": {
-    "covered": 1872,
-    "total": 2014,
-    "percent": 92.95
+    "covered": 1943,
+    "total": 2085,
+    "percent": 93.19
   },
   "notes": [
     "Go lines are mapped from Go coverage blocks by gocover-cobertura v1.5.0.",

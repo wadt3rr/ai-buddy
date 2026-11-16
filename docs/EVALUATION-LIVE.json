@@ -1,0 +1,162 @@
+{
+  "mode": "llm",
+  "index_preparation_seconds": 0,
+  "passed": 10,
+  "total": 10,
+  "latency_ms": {
+    "median": 13481.538,
+    "max": 33663.767
+  },
+  "cases": [
+    {
+      "id": "runtime-ru",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 33663.767,
+      "indexed_documents": 4
+    },
+    {
+      "id": "runtime-paraphrase",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 20165.528,
+      "indexed_documents": 4
+    },
+    {
+      "id": "runtime-en",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 19987.051,
+      "indexed_documents": 4
+    },
+    {
+      "id": "no-access",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 6464.697,
+      "indexed_documents": 0
+    },
+    {
+      "id": "acl-injection",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 6879.632,
+      "indexed_documents": 0
+    },
+    {
+      "id": "unresolved",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 14678.738,
+      "indexed_documents": 2
+    },
+    {
+      "id": "missing-service",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 5080.009,
+      "indexed_documents": 0
+    },
+    {
+      "id": "ambiguous-service",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 6041.526,
+      "indexed_documents": 0
+    },
+    {
+      "id": "unsupported-topic",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 13810.011,
+      "indexed_documents": 4
+    },
+    {
+      "id": "human",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "conflict": true,
+        "evidence": true,
+        "no_leak": true,
+        "indexed_evidence": true,
+        "live_generation": true
+      },
+      "mode": "llm",
+      "latency_ms": 13153.065,
+      "indexed_documents": 0
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import json
 import time
 from collections import defaultdict
 
-from .knowledge import Knowledge, rule_claims
+from .knowledge import Knowledge, retrieve, rule_claims
 from .models import GenerateRequest
 from .tracker import Tracker
 
@@ -15,8 +15,9 @@ logger = logging.getLogger("buddy")
 
 
 class Engine:
-    def __init__(self, knowledge: Knowledge, tracker: Tracker, index=None):
+    def __init__(self, knowledge: Knowledge, tracker: Tracker, index=None, responder=None):
         self.knowledge, self.tracker, self.index = knowledge, tracker, index
+        self.responder = responder
 
     def generate(self, request: GenerateRequest) -> dict:
         started = time.monotonic()
@@ -27,8 +28,39 @@ class Engine:
         mode = "rules"
         tickets, conflicts, sources, usage = [], [], [], {}
         indexed_documents = 0
+        docs = []
+        citations = []
 
         def finish(status, text, claims=()):
+            nonlocal mode, usage, citations
+            notice = ""
+            if self.responder:
+                # Every live-mode turn calls the model; routing and ACLs stay in code.
+                context = retrieve(docs, latest.content)
+                for source in context:
+                    source["text"] = source["text"][:1400]
+                try:
+                    answer, usage = self.responder.answer(request.messages, context, claims,
+                        {"status": status, "reason": text, "conflicts": conflicts,
+                         "service": service, "services": list(self.knowledge.services)})
+                    mode = "llm"
+                    text = answer.answer
+                    citations = [citation.model_dump() for citation in answer.citations]
+                    if status == "Решено" and not answer.supported:
+                        tickets.append(mentor_ticket("В доступных документах недостаточно сведений для ответа."))
+                        status = "Передано наставнику"
+                    notice = "\n\n_Ответ сформирован LLM по доступной документации._"
+                except Exception as exc:
+                    # A failed model call must never masquerade as generated text.
+                    reason = str(exc) if type(exc) is ValueError else type(exc).__name__
+                    logger.warning("request_id=%s llm_failure=%s", request.request_id, reason)
+                    mode = "fallback"
+                    notice = "\n\n**LLM недоступна или вернула непроверяемый ответ. Показан резервный ответ по правилам.**"
+                    if status == "Решено":
+                        text = "Сгенерировать ответ на вопрос не удалось. Ниже — доступные проверенные факты. " \
+                               "Для помощи создано обращение наставнику."
+                        tickets.append(mentor_ticket("Генерация ответа моделью недоступна."))
+                        status = "Передано наставнику"
             elapsed = round((time.monotonic() - started) * 1000)
             # Never log document bodies, user text, credentials or user IDs.
             logger.info("request_id=%s status=%s mode=%s latency_ms=%s usage=%s",
@@ -47,18 +79,22 @@ class Engine:
                 content += "\n\nИсточники:\n" + links
             if ticket_text:
                 content += "\n\n" + ticket_text
-            if status == "Решено":
+            if status == "Решено" and not self.responder:
                 content += "\n\nПопробуй запуск. Если ошибка осталась, напиши «не помогло» — подключу наставника."
+            content += notice
             return dict(content=content, status=status, mode=mode, sources=sources,
                         conflicts=conflicts, tickets=tickets, usage=usage, latency_ms=elapsed,
-                        indexed_documents=indexed_documents)
+                        indexed_documents=indexed_documents, citations=citations,
+                        llm_used=mode == "llm")
 
-        def handoff(reason):
-            ticket = self.tracker.create(user_id, "handoff:" + str(request.request_id), "mentor",
+        def mentor_ticket(reason):
+            return self.tracker.create(user_id, "handoff:" + str(request.request_id), "mentor",
                                          {"question": latest.content, "service": service, "reason": reason,
                                           "source_ids": [s["id"] for s in sources], "conflicts": conflicts,
                                           "history": [m.model_dump() for m in request.messages[-6:]]})
-            tickets.append(ticket)
+
+        def handoff(reason):
+            tickets.append(mentor_ticket(reason))
             return finish("Передано наставнику", reason + "\nСледующий шаг: дождись ответа наставника по заявке.")
 
         service = self.knowledge.service_from(request.messages)
@@ -112,6 +148,10 @@ class Engine:
         if unresolved:
             return handoff("В документации указаны разные версии, а подтверждения для текущей ревизии нет. Нужна проверка наставника.")
         launch = next((c for c in selected if c.key == "launch_command"), None)
+        if self.responder:
+            # The model handles free-form questions and follow-ups, not a keyword list.
+            return finish("Решено", "Ответь на вопрос только по доступным источникам и проверенным фактам. "
+                          "При недостатке данных выставь supported=false.", selected)
         if not launch:
             return handoff("Проверяемой команды запуска в доступных документах не найдено.")
         # Narrow task boundary: never answer arbitrary onboarding questions from unrelated facts.

@@ -29,3 +29,23 @@ class Claim(BaseModel):
 class Extraction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     claims: list[Claim] = Field(max_length=40)
+
+
+class Citation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    doc_id: str
+    quote: str = Field(min_length=1, max_length=600)
+
+
+class Answer(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    answer: str = Field(min_length=1, max_length=6000)
+    supported: bool
+    citations: list[Citation] = Field(max_length=8)
+
+
+class AnswerDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    answer: str = Field(min_length=1, max_length=6000)
+    supported: bool
+    source_ids: list[str] = Field(max_length=8)
