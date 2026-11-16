@@ -1,0 +1,99 @@
+{
+  "format_version": 1,
+  "created_at": "2026-11-16T02:01:38.863874+00:00",
+  "model": "qwen3:4b-instruct-2507-q4_K_M",
+  "prompt_sha256": "e0af1dd43530c846057101ab60997db4373b36520b1445b1ddeaa7983cc5b1e1",
+  "documents": {
+    "listing-readme": {
+      "fingerprint": "9892c055abe7f21dd784341b5c43807b6f9951dace9a47a609a63ee31ac37d07",
+      "claims": [
+        {
+          "doc_id": "listing-readme",
+          "key": "python_version",
+          "value": "3.12",
+          "quote": "Python 3.12. PostgreSQL 16."
+        }
+      ]
+    },
+    "listing-setup": {
+      "fingerprint": "dfd7787afe8a356ffa1ca08b014d015ba0eca542029a97f8e7c1b5c0c5c96178",
+      "claims": [
+        {
+          "doc_id": "listing-setup",
+          "key": "python_version",
+          "value": "3.12",
+          "quote": "Python: 3.12. PostgreSQL: 16."
+        }
+      ]
+    },
+    "listing-confluence": {
+      "fingerprint": "42ab6ce66c29693c56caf39fb11d7d201b1cd211504df2f99a15e780d38bc3c9",
+      "claims": [
+        {
+          "doc_id": "listing-confluence",
+          "key": "python_version",
+          "value": "3.10",
+          "quote": "Для локального запуска установите Python 3.10. PostgreSQL 16."
+        }
+      ]
+    },
+    "listing-manifest": {
+      "fingerprint": "3d42084de057c3be5d156fdeb00e92517c105e7d1b881b90b9efbf921228b4ec",
+      "claims": [
+        {
+          "doc_id": "listing-manifest",
+          "key": "python_version",
+          "value": "3.12",
+          "quote": "requires-python = \"==3.12.*\""
+        }
+      ]
+    },
+    "billing-readme": {
+      "fingerprint": "9179922d4e6905ed4cca7f7a0326f6fafbc296dffedb2cc155610c7a8c63078b",
+      "claims": [
+        {
+          "doc_id": "billing-readme",
+          "key": "python_version",
+          "value": "3.11",
+          "quote": "Python: 3.11"
+        },
+        {
+          "doc_id": "billing-readme",
+          "key": "launch_command",
+          "value": "make run",
+          "quote": "Команда запуска: `make run`"
+        }
+      ]
+    },
+    "billing-confluence": {
+      "fingerprint": "da95d85c0f7c8f13df39b1b5fc4b069b94d323437c90eed8bd14050b0b0b127e",
+      "claims": [
+        {
+          "doc_id": "billing-confluence",
+          "key": "launch_command",
+          "value": "make run",
+          "quote": "Команда запуска: `make run`"
+        }
+      ]
+    }
+  },
+  "usage": [
+    {
+      "prompt_tokens": 548,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "completion_tokens": 151,
+      "total_tokens": 699
+    },
+    {
+      "prompt_tokens": 361,
+      "prompt_tokens_details": {
+        "cached_tokens": 273
+      },
+      "completion_tokens": 127,
+      "total_tokens": 488
+    }
+  ],
+  "rejected_claims": 1
+}

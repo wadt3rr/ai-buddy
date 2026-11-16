@@ -76,12 +76,6 @@ export function LoginPage() {
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="password">Пароль</Label>
 
-                <a
-                  href="/forgot-password"
-                  className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-                >
-                  Забыли пароль?
-                </a>
               </div>
 
               <div className="relative">

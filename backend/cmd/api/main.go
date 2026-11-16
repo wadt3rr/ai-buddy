@@ -61,10 +61,14 @@ func main() {
 	userService := user.NewService(userRepository)
 
 	messageRepository := messagepostgres.NewRepository(pool)
+	aiClient, err := assistant.NewHTTPClient(os.Getenv("AI_SERVICE_URL"), os.Getenv("AI_SERVICE_TOKEN"), 80*time.Second)
+	if err != nil {
+		log.Fatalf("configure AI service: %v", err)
+	}
 	messageService := message.NewService(
 		messageRepository,
 		userService,
-		assistant.NewMockClient(),
+		aiClient,
 	)
 	messageHandler := handlers.NewMessageHandler(messageService)
 
@@ -86,6 +90,7 @@ func main() {
 		userHandler,
 		messageHandler,
 		authMiddleware,
+		handlers.NewAIHandler(aiClient, userService),
 	)
 
 	server := &http.Server{

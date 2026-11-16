@@ -1,0 +1,20 @@
+[project]
+name = "ai-buddy-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["fastapi==0.141.1", "uvicorn==0.52.1", "httpx==0.28.1"]
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "pytest-cov==7.1.0"]
+integration = ["psycopg[binary]==3.3.9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["buddy"]
+
+[tool.coverage.report]
+fail_under = 80.01
+show_missing = true

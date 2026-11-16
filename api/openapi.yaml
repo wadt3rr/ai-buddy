@@ -1,44 +1,43 @@
 openapi: 3.1.0
-
 info:
   title: AI Buddy API
   description: REST API for AI Buddy onboarding assistant.
-  version: 1.0.0
-
+  version: 1.1.0
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Local development server
-
+- url: http://localhost:3000/api/v1
+  description: Docker Compose
 tags:
-  - name: Health
-    description: API health checks
-  - name: Authentication
-    description: User authentication
-  - name: Users
-    description: Current user information
-  - name: Messages
-    description: Infinite chat
-
+- name: Health
+  description: API health checks
+- name: Authentication
+  description: User authentication
+- name: Users
+  description: Current user information
+- name: Messages
+  description: Infinite chat
+- name: AI
+  description: Sources and request registry
 paths:
   /health:
     get:
       tags:
-        - Health
+      - Health
       summary: Health check
       operationId: healthCheck
       responses:
-        "200":
+        '200':
           description: API is running
           content:
             text/plain:
               schema:
                 type: string
                 example: OK
-
+      servers:
+      - url: http://localhost:3000
   /auth/login:
     post:
       tags:
-        - Authentication
+      - Authentication
       summary: Authenticate user
       operationId: login
       requestBody:
@@ -46,188 +45,243 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginRequest"
+              $ref: '#/components/schemas/LoginRequest'
       responses:
-        "200":
+        '200':
           description: Authentication successful
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginResponse"
-        "400":
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
           description: Invalid email or password
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
   /users/me:
     get:
       tags:
-        - Users
+      - Users
       summary: Get current user
       operationId: getCurrentUser
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       responses:
-        "200":
+        '200':
           description: Current user profile
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        "401":
+                $ref: '#/components/schemas/User'
+        '401':
           description: Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: User not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
   /messages:
     get:
       tags:
-        - Messages
+      - Messages
       summary: Get chat history
       operationId: listMessages
-      description: |
-        Returns messages belonging to the authenticated user.
+      description: 'Returns messages belonging to the authenticated user.
+
         Messages are returned in chronological order.
 
+
         Pagination uses the ID of the oldest message in the current page.
+
         Pass next_before from the previous response as the before parameter
+
         to retrieve older messages.
+
+        '
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - name: limit
-          in: query
-          required: false
-          description: Number of messages to return. Defaults to 50.
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 50
-        - name: before
-          in: query
-          required: false
-          description: UUID cursor identifying the oldest message from the previous page.
-          schema:
-            type: string
-            format: uuid
+      - name: limit
+        in: query
+        required: false
+        description: Number of messages to return. Defaults to 50.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: before
+        in: query
+        required: false
+        description: UUID cursor identifying the oldest message from the previous
+          page.
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: Chat history
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MessageListResponse"
-        "400":
+                $ref: '#/components/schemas/MessageListResponse'
+        '400':
           description: Invalid pagination parameters
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
           description: Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       tags:
-        - Messages
+      - Messages
       summary: Send a chat message
       operationId: sendMessage
-      description: |
-        Creates a user message and requests an assistant response.
+      description: 'Creates a user message and requests an assistant response.
+
         The message role and user ID are assigned by the backend.
+
         The client must not provide either field.
+
+        '
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateMessageRequest"
+              $ref: '#/components/schemas/CreateMessageRequest'
       responses:
-        "201":
+        '201':
           description: User message and assistant response created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SendMessageResponse"
-        "400":
+                $ref: '#/components/schemas/SendMessageResponse'
+        '400':
           description: Invalid request or message content
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
           description: Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "502":
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
           description: User message saved, but assistant response could not be generated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AssistantUnavailableResponse"
-        "500":
+                $ref: '#/components/schemas/AssistantUnavailableResponse'
+        '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
+  /ai/tickets:
+    get:
+      tags:
+      - AI
+      summary: List saved requests for the authenticated user
+      operationId: listTickets
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Saved requests
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - tickets
+                properties:
+                  tickets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ticket'
+        '401':
+          description: Authentication required
+        '502':
+          description: Registry unavailable
+  /ai/sources/{sourceID}:
+    get:
+      tags:
+      - AI
+      summary: Read an authorized source document
+      operationId: readSource
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: sourceID
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Source text
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Authentication required
+        '404':
+          description: Source missing or forbidden
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
   schemas:
     LoginRequest:
       type: object
       additionalProperties: false
       required:
-        - email
-        - password
+      - email
+      - password
       properties:
         email:
           type: string
@@ -236,13 +290,12 @@ components:
         password:
           type: string
           format: password
-          example: "example-password"
-
+          example: example-password
     LoginResponse:
       type: object
       required:
-        - access_token
-        - token_type
+      - access_token
+      - token_type
       properties:
         access_token:
           type: string
@@ -250,14 +303,13 @@ components:
         token_type:
           type: string
           example: Bearer
-
     User:
       type: object
       required:
-        - id
-        - email
-        - team_role
-        - created_at
+      - id
+      - email
+      - team_role
+      - created_at
       properties:
         id:
           type: string
@@ -271,27 +323,25 @@ components:
         created_at:
           type: string
           format: date-time
-
     CreateMessageRequest:
       type: object
       additionalProperties: false
       required:
-        - content
+      - content
       properties:
         content:
           type: string
           minLength: 1
           maxLength: 10000
           description: Message text. Maximum size is 10000 bytes at the backend.
-          example: "I cannot install Go dependencies."
-
+          example: I cannot install Go dependencies.
     Message:
       type: object
       required:
-        - id
-        - role
-        - content
-        - created_at
+      - id
+      - role
+      - content
+      - created_at
       properties:
         id:
           type: string
@@ -299,66 +349,61 @@ components:
         role:
           type: string
           enum:
-            - user
-            - assistant
+          - user
+          - assistant
         content:
           type: string
         created_at:
           type: string
           format: date-time
-
     MessageListResponse:
       type: object
       required:
-        - messages
-        - next_before
+      - messages
+      - next_before
       properties:
         messages:
           type: array
           items:
-            $ref: "#/components/schemas/Message"
+            $ref: '#/components/schemas/Message'
         next_before:
           type:
-            - string
-            - "null"
+          - string
+          - 'null'
           format: uuid
           description: Cursor for the next page, or null if there are no older messages.
-
     SendMessageResponse:
       type: object
       required:
-        - user_message
-        - assistant_message
+      - user_message
+      - assistant_message
       properties:
         user_message:
-          $ref: "#/components/schemas/Message"
+          $ref: '#/components/schemas/Message'
         assistant_message:
-          $ref: "#/components/schemas/Message"
-
+          $ref: '#/components/schemas/Message'
     AssistantUnavailableResponse:
       type: object
       required:
-        - error
-        - user_message
+      - error
+      - user_message
       properties:
         error:
-          $ref: "#/components/schemas/ErrorBody"
+          $ref: '#/components/schemas/ErrorBody'
         user_message:
-          $ref: "#/components/schemas/Message"
-
+          $ref: '#/components/schemas/Message'
     ErrorResponse:
       type: object
       required:
-        - error
+      - error
       properties:
         error:
-          $ref: "#/components/schemas/ErrorBody"
-
+          $ref: '#/components/schemas/ErrorBody'
     ErrorBody:
       type: object
       required:
-        - code
-        - message
+      - code
+      - message
       properties:
         code:
           type: string
@@ -366,3 +411,31 @@ components:
         message:
           type: string
           example: Invalid JSON body
+    Ticket:
+      type: object
+      required:
+      - id
+      - kind
+      - status
+      - payload
+      - created_at
+      properties:
+        id:
+          type: string
+          example: BUDDY-12
+        kind:
+          type: string
+          enum:
+          - mentor
+          - documentation
+        status:
+          type: string
+          example: open
+        created_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true

@@ -28,7 +28,7 @@ function ChatContent({ sessionKey }: { sessionKey: string }) {
     <div className="relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
       {/* Хедер поверх содержимого */}
       <div className="absolute inset-x-0 top-0 z-50">
-        <Header />
+        <Header ticketRefreshKey={messages.filter(message => message.role === "assistant" && message.status === "completed").length} />
       </div>
 
       <main className="flex min-h-0 flex-1 flex-col">

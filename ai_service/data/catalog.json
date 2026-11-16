@@ -1,0 +1,22 @@
+{
+  "listing-search": {
+    "revision": "v2.0",
+    "access_roles": [
+      "intern",
+      "mentor"
+    ]
+  },
+  "notifications-service": {
+    "revision": "v1.0",
+    "access_roles": [
+      "mentor"
+    ]
+  },
+  "billing-service": {
+    "revision": "v1.0",
+    "access_roles": [
+      "intern",
+      "mentor"
+    ]
+  }
+}

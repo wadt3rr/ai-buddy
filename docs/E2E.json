@@ -1,0 +1,241 @@
+{
+  "result": "passed",
+  "scenarios": [
+    {
+      "question": "Не запускается listing-search: ошибка версии Python",
+      "answer": "**Статус: Решено**\n\nИнструкция найдена. Команда из документации: `make run`. Версия подтверждена конфигурацией текущей ревизии v2.0; расхождение передано владельцам и наставнику.\n\nПроверенные факты:\n- Python: `3.12`.\n- PostgreSQL: `16`.\n- Команда запуска: `make run`.\n\nОбнаружены расхождения:\n- Python: listing-readme → 3.12; listing-setup → 3.12; listing-confluence → 3.10; listing-manifest → 3.12\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-2** · открыта · владельцам документации\n\nПопробуй запуск. Если ошибка осталась, напиши «не помогло» — подключу наставника.",
+      "latency_ms": 7.228
+    },
+    {
+      "question": "Не помогло",
+      "answer": "**Статус: Передано наставнику**\n\nСтажёр запросил помощь человека или сообщил, что инструкция не помогла.\nСледующий шаг: дождись ответа наставника по заявке.\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-3** · открыта · наставнику",
+      "latency_ms": 7.646
+    },
+    {
+      "question": "Не скачивается notifications-service",
+      "answer": "**Статус: Передано наставнику**\n\nУ тебя пока нет доступа к репозиторию notifications-service. Инструкция по выдаче доступа в доступных источниках не найдена. Закрытые документы не читались.\nСледующий шаг: дождись ответа наставника по заявке.\n\n- Заявка **BUDDY-4** · открыта · наставнику",
+      "latency_ms": 5.885
+    },
+    {
+      "question": "Не запускается billing-service",
+      "answer": "**Статус: Передано наставнику**\n\nВ документации указаны разные версии, а подтверждения для текущей ревизии нет. Нужна проверка наставника.\nСледующий шаг: дождись ответа наставника по заявке.\n\nОбнаружены расхождения:\n- Python: billing-readme → 3.11; billing-confluence → 3.12\n\nИсточники:\n- [billing-service / README](/api/v1/ai/sources/billing-readme) — 2026-11-14\n- [Confluence / billing-service](/api/v1/ai/sources/billing-confluence) — 2026-11-14\n\n- Заявка **BUDDY-5** · открыта · владельцам документации\n- Заявка **BUDDY-6** · открыта · наставнику",
+      "latency_ms": 6.51
+    }
+  ],
+  "tickets": [
+    {
+      "id": "BUDDY-6",
+      "user_id": "c5e649be-9391-42e5-a2f8-3cbb30bade7d",
+      "kind": "mentor",
+      "payload": {
+        "question": "Не запускается billing-service",
+        "service": "billing-service",
+        "reason": "В документации указаны разные версии, а подтверждения для текущей ревизии нет. Нужна проверка наставника.",
+        "source_ids": [
+          "billing-readme",
+          "billing-confluence"
+        ],
+        "conflicts": [
+          {
+            "key": "python_version",
+            "claims": [
+              {
+                "doc_id": "billing-readme",
+                "key": "python_version",
+                "value": "3.11",
+                "quote": "Python: 3.11"
+              },
+              {
+                "doc_id": "billing-confluence",
+                "key": "python_version",
+                "value": "3.12",
+                "quote": "Python: 3.12"
+              }
+            ]
+          }
+        ],
+        "history": [
+          {
+            "role": "assistant",
+            "content": "**Статус: Решено**\n\nИнструкция найдена. Команда из документации: `make run`. Версия подтверждена конфигурацией текущей ревизии v2.0; расхождение передано владельцам и наставнику.\n\nПроверенные факты:\n- Python: `3.12`.\n- PostgreSQL: `16`.\n- Команда запуска: `make run`.\n\nОбнаружены расхождения:\n- Python: listing-readme → 3.12; listing-setup → 3.12; listing-confluence → 3.10; listing-manifest → 3.12\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-2** · открыта · владельцам документации\n\nПопробуй запуск. Если ошибка осталась, напиши «не помогло» — подключу наставника."
+          },
+          {
+            "role": "user",
+            "content": "Не помогло"
+          },
+          {
+            "role": "assistant",
+            "content": "**Статус: Передано наставнику**\n\nСтажёр запросил помощь человека или сообщил, что инструкция не помогла.\nСледующий шаг: дождись ответа наставника по заявке.\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-3** · открыта · наставнику"
+          },
+          {
+            "role": "user",
+            "content": "Не скачивается notifications-service"
+          },
+          {
+            "role": "assistant",
+            "content": "**Статус: Передано наставнику**\n\nУ тебя пока нет доступа к репозиторию notifications-service. Инструкция по выдаче доступа в доступных источниках не найдена. Закрытые документы не читались.\nСледующий шаг: дождись ответа наставника по заявке.\n\n- Заявка **BUDDY-4** · открыта · наставнику"
+          },
+          {
+            "role": "user",
+            "content": "Не запускается billing-service"
+          }
+        ]
+      },
+      "status": "open",
+      "created_at": "2026-11-16T02:19:09.437Z"
+    },
+    {
+      "id": "BUDDY-5",
+      "user_id": "c5e649be-9391-42e5-a2f8-3cbb30bade7d",
+      "kind": "documentation",
+      "payload": {
+        "service": "billing-service",
+        "conflicts": [
+          {
+            "key": "python_version",
+            "claims": [
+              {
+                "doc_id": "billing-readme",
+                "key": "python_version",
+                "value": "3.11",
+                "quote": "Python: 3.11"
+              },
+              {
+                "doc_id": "billing-confluence",
+                "key": "python_version",
+                "value": "3.12",
+                "quote": "Python: 3.12"
+              }
+            ]
+          }
+        ],
+        "recipients": [
+          "Команда биллинга",
+          "Наставник команды"
+        ]
+      },
+      "status": "open",
+      "created_at": "2026-11-16T02:19:09.436Z"
+    },
+    {
+      "id": "BUDDY-4",
+      "user_id": "c5e649be-9391-42e5-a2f8-3cbb30bade7d",
+      "kind": "mentor",
+      "payload": {
+        "question": "Не скачивается notifications-service",
+        "service": "notifications-service",
+        "reason": "У тебя пока нет доступа к репозиторию notifications-service. Инструкция по выдаче доступа в доступных источниках не найдена. Закрытые документы не читались.",
+        "source_ids": [],
+        "conflicts": [],
+        "history": [
+          {
+            "role": "user",
+            "content": "Не запускается listing-search: ошибка версии Python"
+          },
+          {
+            "role": "assistant",
+            "content": "**Статус: Решено**\n\nИнструкция найдена. Команда из документации: `make run`. Версия подтверждена конфигурацией текущей ревизии v2.0; расхождение передано владельцам и наставнику.\n\nПроверенные факты:\n- Python: `3.12`.\n- PostgreSQL: `16`.\n- Команда запуска: `make run`.\n\nОбнаружены расхождения:\n- Python: listing-readme → 3.12; listing-setup → 3.12; listing-confluence → 3.10; listing-manifest → 3.12\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-2** · открыта · владельцам документации\n\nПопробуй запуск. Если ошибка осталась, напиши «не помогло» — подключу наставника."
+          },
+          {
+            "role": "user",
+            "content": "Не помогло"
+          },
+          {
+            "role": "assistant",
+            "content": "**Статус: Передано наставнику**\n\nСтажёр запросил помощь человека или сообщил, что инструкция не помогла.\nСледующий шаг: дождись ответа наставника по заявке.\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-3** · открыта · наставнику"
+          },
+          {
+            "role": "user",
+            "content": "Не скачивается notifications-service"
+          }
+        ]
+      },
+      "status": "open",
+      "created_at": "2026-11-16T02:19:09.429Z"
+    },
+    {
+      "id": "BUDDY-3",
+      "user_id": "c5e649be-9391-42e5-a2f8-3cbb30bade7d",
+      "kind": "mentor",
+      "payload": {
+        "question": "Не помогло",
+        "service": "listing-search",
+        "reason": "Стажёр запросил помощь человека или сообщил, что инструкция не помогла.",
+        "source_ids": [
+          "listing-readme",
+          "listing-setup",
+          "listing-confluence",
+          "listing-manifest"
+        ],
+        "conflicts": [],
+        "history": [
+          {
+            "role": "user",
+            "content": "Не запускается listing-search: ошибка версии Python"
+          },
+          {
+            "role": "assistant",
+            "content": "**Статус: Решено**\n\nИнструкция найдена. Команда из документации: `make run`. Версия подтверждена конфигурацией текущей ревизии v2.0; расхождение передано владельцам и наставнику.\n\nПроверенные факты:\n- Python: `3.12`.\n- PostgreSQL: `16`.\n- Команда запуска: `make run`.\n\nОбнаружены расхождения:\n- Python: listing-readme → 3.12; listing-setup → 3.12; listing-confluence → 3.10; listing-manifest → 3.12\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-2** · открыта · владельцам документации\n\nПопробуй запуск. Если ошибка осталась, напиши «не помогло» — подключу наставника."
+          },
+          {
+            "role": "user",
+            "content": "Не помогло"
+          }
+        ]
+      },
+      "status": "open",
+      "created_at": "2026-11-16T02:19:09.421Z"
+    },
+    {
+      "id": "BUDDY-2",
+      "user_id": "c5e649be-9391-42e5-a2f8-3cbb30bade7d",
+      "kind": "documentation",
+      "payload": {
+        "service": "listing-search",
+        "conflicts": [
+          {
+            "key": "python_version",
+            "claims": [
+              {
+                "doc_id": "listing-readme",
+                "key": "python_version",
+                "value": "3.12",
+                "quote": "Python 3.12. PostgreSQL 16."
+              },
+              {
+                "doc_id": "listing-setup",
+                "key": "python_version",
+                "value": "3.12",
+                "quote": "Python: 3.12. PostgreSQL: 16."
+              },
+              {
+                "doc_id": "listing-confluence",
+                "key": "python_version",
+                "value": "3.10",
+                "quote": "Для локального запуска установите Python 3.10. PostgreSQL 16."
+              },
+              {
+                "doc_id": "listing-manifest",
+                "key": "python_version",
+                "value": "3.12",
+                "quote": "requires-python = \"==3.12.*\""
+              }
+            ]
+          }
+        ],
+        "recipients": [
+          "Команда поиска",
+          "Наставник команды"
+        ]
+      },
+      "status": "open",
+      "created_at": "2026-11-16T02:19:09.417Z"
+    }
+  ],
+  "http_latency_ms": {
+    "samples": 30,
+    "p50": 3.359,
+    "p95": 3.891,
+    "max": 4.151
+  }
+}
