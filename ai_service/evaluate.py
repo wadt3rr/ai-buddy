@@ -9,7 +9,7 @@ import time
 from uuid import uuid4
 
 from buddy.engine import Engine
-from buddy.index import EvidenceIndex, build_index, save_index
+from buddy.index import EvidenceIndex
 from buddy.knowledge import Knowledge
 from buddy.llm import LLM
 from buddy.models import GenerateRequest
@@ -24,19 +24,14 @@ def evaluate(mode):
     results = []
     with tempfile.TemporaryDirectory() as directory:
         index = None
-        if mode == "llm":
-            llm = LLM(os.getenv("LLM_BASE_URL", "http://localhost:11434/v1"),
-                      os.getenv("LLM_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
-                      os.getenv("LLM_API_KEY", "ollama"), timeout=120)
-            started = time.perf_counter()
-            output = build_index(knowledge, llm)
-            path = Path(directory) / "facts.json"
-            save_index(output, path)
-            index = EvidenceIndex(path)
-            preparation = round(time.perf_counter() - started, 3)
-        elif mode == "indexed":
+        responder = None
+        if mode in ("llm", "indexed"):
             index = EvidenceIndex(Path(os.getenv("FACTS_INDEX", "/state/facts.json")), root / "data/facts.json")
-        engine = Engine(knowledge, Tracker(Path(directory) / "registry.sqlite"), index)
+        if mode == "llm":
+            responder = LLM(os.getenv("LLM_BASE_URL", "http://localhost:11434/v1"),
+                      os.getenv("LLM_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
+                      os.getenv("LLM_API_KEY", "ollama"), timeout=180)
+        engine = Engine(knowledge, Tracker(Path(directory) / "registry.sqlite"), index, responder)
         for case in cases:
             started = time.perf_counter()
             result = engine.generate(GenerateRequest(request_id=uuid4(), user_id=uuid4(), team_role="intern",
@@ -48,6 +43,7 @@ def evaluate(mode):
                 "evidence": case.get("must_contain", "") in result["content"],
                 "no_leak": not case.get("forbid") or case["forbid"] not in json.dumps(result),
                 "indexed_evidence": mode == "offline" or case["status"] != "Решено" or result["indexed_documents"] > 0,
+                "live_generation": mode != "llm" or result["llm_used"],
             }
             results.append({"id": case["id"], "passed": all(checks.values()), "checks": checks,
                             "mode": result["mode"], "latency_ms": elapsed, "indexed_documents": result["indexed_documents"]})

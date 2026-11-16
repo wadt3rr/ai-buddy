@@ -193,7 +193,7 @@ def test_app_from_environment_and_bad_configuration(tmp_path, monkeypatch):
     monkeypatch.setenv("AI_SERVICE_TOKEN", "token")
     assert TestClient(create_app()).get("/health").json()["mode"] == "rules"
     monkeypatch.setenv("AI_MODE", "llm")
-    assert TestClient(create_app()).get("/health").json()["mode"] in ("indexed", "rules")
+    assert TestClient(create_app()).get("/health").json()["mode"] == "llm"
     monkeypatch.setenv("AI_MODE", "typo")
     with pytest.raises(ValueError):
         create_app()

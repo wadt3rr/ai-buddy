@@ -18,7 +18,7 @@ services:
     build: ./ai_service
     environment:
       AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-local-demo-internal-token-change-me}
-      AI_MODE: ${AI_MODE:-indexed}
+      AI_MODE: ${AI_MODE:-llm}
       LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434/v1}
       LLM_MODEL: ${LLM_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
       LLM_API_KEY: ${LLM_API_KEY:-ollama}
@@ -59,6 +59,7 @@ services:
     environment:
       OLLAMA_CONTEXT_LENGTH: "4096"
       OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_KEEP_ALIVE: "30m"
     volumes:
       - ollama_models:/root/.ollama
     healthcheck:
@@ -86,7 +87,7 @@ services:
     volumes:
       - tracker_data:/state
     depends_on:
-      model: { condition: service_completed_successfully }
+      ollama: { condition: service_healthy }
 volumes:
   postgres_data:
   tracker_data:

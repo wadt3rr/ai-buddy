@@ -1,0 +1,25 @@
+{
+  "result": "passed",
+  "mode": "llm",
+  "transport": "native HTTP Go/PostgreSQL/Python/Ollama",
+  "scenarios": [
+    {
+      "question": "Как запустить listing-search? Объясни коротко, я новичок.",
+      "answer": "**Статус: Решено**\n\nЧтобы запустить listing-search, нужно установить Python 3.12 и PostgreSQL 16, затем выполнить команду `make run`. Это указано в документах по настройке и в файле manifest. Важно: в одном из источников указано Python 3.10, но это устаревшая информация — в проверенных фактах указано Python 3.12.\n\nПроверенные факты:\n- Python: `3.12`.\n- PostgreSQL: `16`.\n- Команда запуска: `make run`.\n\nОбнаружены расхождения:\n- Python: listing-readme → 3.12; listing-setup → 3.12; listing-confluence → 3.10; listing-manifest → 3.12\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-1** · открыта · владельцам документации\n\n_Ответ сформирован LLM по доступной документации._",
+      "latency_ms": 9149.226
+    },
+    {
+      "question": "Почему ты выбрал именно эту версию, если Confluence говорит другое? Объясни простыми словами.",
+      "answer": "**Статус: Решено**\n\nПотому что в проверенных фактах, которые имеют приоритет, указано Python 3.12. В Confluence написано о Python 3.10, но это устаревшая информация. Документы, такие как README и pyproject.toml, подтверждают версию 3.12. Система проверяет только факты, а не все источники, поэтому мы пользуемся тем, что подтверждено.\n\nПроверенные факты:\n- Python: `3.12`.\n- PostgreSQL: `16`.\n- Команда запуска: `make run`.\n\nОбнаружены расхождения:\n- Python: listing-readme → 3.12; listing-setup → 3.12; listing-confluence → 3.10; listing-manifest → 3.12\n\nИсточники:\n- [listing-search / README](/api/v1/ai/sources/listing-readme) — 2026-11-14\n- [listing-search / docs/setup.md](/api/v1/ai/sources/listing-setup) — 2026-11-14\n- [Confluence / listing-search](/api/v1/ai/sources/listing-confluence) — 2024-02-01\n- [listing-search / pyproject.toml (v2.0)](/api/v1/ai/sources/listing-manifest) — 2026-11-14\n\n- Заявка **BUDDY-1** · открыта · владельцам документации\n\n_Ответ сформирован LLM по доступной документации._",
+      "latency_ms": 10164.151
+    }
+  ],
+  "checks": [
+    "JWT login",
+    "live model generation",
+    "conversation history",
+    "source ACL",
+    "persistent tickets",
+    "message persistence"
+  ]
+}
