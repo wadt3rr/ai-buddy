@@ -1,7 +1,7 @@
 http:
   addr: ":8080"
   read_timeout: 5s
-  write_timeout: 10s
+  write_timeout: 90s
   idle_timeout: 60s
 database:
   max_conns: 10

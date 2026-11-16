@@ -1,0 +1,106 @@
+[
+  {
+    "id": "listing-readme",
+    "service": "listing-search",
+    "path": "listing-search/README.md",
+    "title": "listing-search / README",
+    "roles": [
+      "intern",
+      "mentor"
+    ],
+    "kind": "documentation",
+    "revision": "v2.0",
+    "updated_at": "2026-11-14",
+    "owner": "Команда поиска",
+    "origin": "repository"
+  },
+  {
+    "id": "listing-setup",
+    "service": "listing-search",
+    "path": "listing-search/docs/setup.md",
+    "title": "listing-search / docs/setup.md",
+    "roles": [
+      "intern",
+      "mentor"
+    ],
+    "kind": "documentation",
+    "revision": "v2.0",
+    "updated_at": "2026-11-14",
+    "owner": "Команда поиска",
+    "origin": "repository"
+  },
+  {
+    "id": "listing-confluence",
+    "service": "listing-search",
+    "path": "listing-search/confluence.md",
+    "title": "Confluence / listing-search",
+    "roles": [
+      "intern",
+      "mentor"
+    ],
+    "kind": "documentation",
+    "revision": "v1.0",
+    "updated_at": "2024-02-01",
+    "owner": "Команда поиска",
+    "origin": "confluence"
+  },
+  {
+    "id": "listing-manifest",
+    "service": "listing-search",
+    "path": "listing-search/pyproject.toml",
+    "title": "listing-search / pyproject.toml (v2.0)",
+    "roles": [
+      "intern",
+      "mentor"
+    ],
+    "kind": "manifest",
+    "revision": "v2.0",
+    "updated_at": "2026-11-14",
+    "owner": "Команда поиска",
+    "origin": "repository"
+  },
+  {
+    "id": "notifications-private",
+    "service": "notifications-service",
+    "path": "notifications-service/private.md",
+    "title": "notifications-service / Настройка",
+    "roles": [
+      "mentor"
+    ],
+    "kind": "documentation",
+    "revision": "v1.0",
+    "updated_at": "2026-11-14",
+    "owner": "Команда уведомлений",
+    "origin": "repository"
+  },
+  {
+    "id": "billing-readme",
+    "service": "billing-service",
+    "path": "billing-service/README.md",
+    "title": "billing-service / README",
+    "roles": [
+      "intern",
+      "mentor"
+    ],
+    "kind": "documentation",
+    "revision": "v1.0",
+    "updated_at": "2026-11-14",
+    "owner": "Команда биллинга",
+    "origin": "repository"
+  },
+  {
+    "id": "billing-confluence",
+    "service": "billing-service",
+    "path": "billing-service/confluence.md",
+    "title": "Confluence / billing-service",
+    "roles": [
+      "intern",
+      "mentor"
+    ],
+    "kind": "documentation",
+    "revision": "v1.0",
+    "updated_at": "2026-11-14",
+    "owner": "Команда биллинга",
+    "origin": "confluence"
+  }
+]

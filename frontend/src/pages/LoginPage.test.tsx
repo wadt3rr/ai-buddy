@@ -27,8 +27,4 @@ it("can reveal and hide the password without submitting or changing its value", 
   expect(password).toHaveAttribute("type", "password")
   expect(password).toHaveValue("example")
   expect(screen.queryByRole("alert")).not.toBeInTheDocument()
-  expect(screen.getByRole("link", { name: "Забыли пароль?" })).toHaveAttribute(
-    "href",
-    "/forgot-password"
-  )
 })

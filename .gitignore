@@ -12,3 +12,15 @@ coverage.*
 #IDE
 .idea/
 .vscode/
+
+# Python and generated runtime state
+**/__pycache__/
+**/.venv/
+**/.pytest_cache/
+**/.coverage
+ai_service/state/
+ai_service/coverage/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+backend/coverage/

@@ -31,6 +31,7 @@ func writeConfig(t *testing.T, content string) string {
 }
 
 func TestLoad(t *testing.T) {
+	t.Setenv("JWT_SECRET", "")
 	path := writeConfig(t, validConfig)
 	cfg, err := Load(path)
 	if err != nil {
@@ -52,6 +53,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestLoadRejectsInvalidConfig(t *testing.T) {
+	t.Setenv("JWT_SECRET", "")
 	tests := []struct {
 		name    string
 		mutate  func(string) string
@@ -81,5 +83,13 @@ func TestLoadMissingFile(t *testing.T) {
 	_, err := Load(filepath.Join(t.TempDir(), "missing.yaml"))
 	if err == nil {
 		t.Fatal("expected error for missing config file")
+	}
+}
+
+func TestJWTSecretFromEnvironment(t *testing.T) {
+	t.Setenv("JWT_SECRET", "environment-secret-at-least-32-bytes")
+	cfg, err := Load(writeConfig(t, validConfig))
+	if err != nil || cfg.Auth.JWTSecret != os.Getenv("JWT_SECRET") {
+		t.Fatalf("environment override: %+v %v", cfg.Auth, err)
 	}
 }

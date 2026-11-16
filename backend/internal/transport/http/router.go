@@ -15,6 +15,7 @@ func NewRouter(
 	userHandler *handlers.UserHandler,
 	messageHandler *handlers.MessageHandler,
 	authMiddleware *auth.Middleware,
+	aiHandlers ...*handlers.AIHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -36,6 +37,10 @@ func NewRouter(
 			r.Get("/users/me", userHandler.Me)
 			r.Get("/messages", messageHandler.List)
 			r.Post("/messages", messageHandler.Create)
+			if len(aiHandlers) > 0 && aiHandlers[0] != nil {
+				r.Get("/ai/sources/{sourceID}", aiHandlers[0].Source)
+				r.Get("/ai/tickets", aiHandlers[0].Tickets)
+			}
 		})
 	})
 

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/message-scroller"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { SourceLink } from "./SourceLink"
 import type { ChatMessage } from "@/types/chat"
 
 type ChatConversationProps = {
@@ -182,7 +183,9 @@ export function ChatConversation({
       window.setTimeout(() => {
         setCopiedId((current) => (current === item.id ? null : current))
       }, 1800)
-    } catch {}
+    } catch {
+      // Clipboard access can be unavailable; leave the response selectable.
+    }
   }
 
   return (
@@ -270,7 +273,7 @@ export function ChatConversation({
                       <Bubble variant="muted">
                         <BubbleContent>
                           <div className="prose prose-sm max-w-none overflow-x-auto prose-neutral dark:prose-invert prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: SourceLink }}>
                               {item.content}
                             </ReactMarkdown>
                           </div>
@@ -312,10 +315,11 @@ export function ChatConversation({
                 )
               })}
               {/* AI готовит ответ */}
-              {isLoading && !messages.at(-1)?.content && (
+              {isLoading && (
                 <Marker role="status">
                   <MarkerContent className="shimmer">
-                    <span className="font-medium">AI-buddy</span> думает...
+                    <span className="font-medium">AI-buddy</span>{" "}
+                    {messages.at(-1)?.content ? "отвечает..." : "думает..."}
                   </MarkerContent>
                 </Marker>
               )}

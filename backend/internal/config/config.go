@@ -98,6 +98,9 @@ func Load(path string) (Config, error) {
 	}
 
 	jwtSecret := strings.TrimSpace(raw.Auth.JWTSecret)
+	if value := os.Getenv("JWT_SECRET"); value != "" {
+		jwtSecret = value
+	}
 	if len(jwtSecret) < 32 {
 		return Config{}, fmt.Errorf("auth.jwt_secret must contain at least 32 bytes")
 	}

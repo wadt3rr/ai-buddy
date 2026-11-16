@@ -1,0 +1,29 @@
+{
+  "backend": {
+    "covered": 874,
+    "total": 991,
+    "percent": 88.19
+  },
+  "ai_service": {
+    "covered": 405,
+    "total": 409,
+    "percent": 99.02
+  },
+  "frontend": {
+    "covered": 593,
+    "total": 614,
+    "percent": 96.58
+  },
+  "combined": {
+    "covered": 1872,
+    "total": 2014,
+    "percent": 92.95
+  },
+  "notes": [
+    "Go lines are mapped from Go coverage blocks by gocover-cobertura v1.5.0.",
+    "Go native percentage counts statements; it is reported separately.",
+    "Python coverage.py counts executable source lines.",
+    "Combined = sum covered lines / sum executable lines, not mean percentages.",
+    "No tests, dependencies or integration-test scripts are included."
+  ]
+}
